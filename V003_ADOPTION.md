@@ -29,3 +29,15 @@ untouched release-only cases reserved until candidate selection. Original chat
 continues to serve. US$3perarm/US$6totalGPUcap and four-hour perarm deadlines remain;
 all failed attempts count, with account US$10reserve. No API judging is launched by
 this data amendment.
+
+## Execution update: 3 November 2026
+
+Arm A is now training on an L4 under an independently reviewed admission.
+The first full-state checkpoint at step 25 is durable; finite step metrics and
+an actual training-process GPU context are observed. The original seven CUDA
+backend settings are bound explicitly. An earlier upload-only attempt was
+stopped before training to correct this setting; its charges remain inside the
+same cumulative US$3 arm cap. The original absolute deadline is retained.
+Arm B remains queued for separate admission. This is operational progress,
+not evidence that the candidate passes conversational release gates. The original
+serving model, evaluation gold and baseline receipts remain unchanged.
