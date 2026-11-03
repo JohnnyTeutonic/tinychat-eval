@@ -50,7 +50,11 @@ not prove what bytes the live server loaded; server identity is operator supplie
 The runner is local HTTP only. Client wall time is diagnostic, not a warmed hardware
 speed benchmark. Verify token usage/context capacity before interpreting long-history
 failures: this pilot's prompts are short, but silent server truncation is not a memory
-capability result. A dedicated context-boundary sweep is a later, separate instrument.
+capability result. `context_sweep.py` is that separate instrument: it plants a fact,
+adds F neutral filler exchanges, asks for the fact, and marks the point where the
+server's reported prompt length falls short of the exactly calibrated untruncated
+length, which is where history was dropped. It is diagnostic, not a release gate:
+`python context_sweep.py run --weights MODEL.gguf --server-identity ID --candidate NAME --out runs/NAME-context`.
 
 ## Langfuse and optional Gemini judgment
 
