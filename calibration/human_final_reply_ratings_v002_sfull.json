@@ -1,0 +1,25 @@
+{
+  "kind": "HUMAN_CALIBRATION_RATINGS",
+  "rater": "Jonathan Reich",
+  "rated_on": "2026-11-03",
+  "blind_to_judge": true,
+  "unit": "final assistant reply of each case, scored on integrations.py RUBRIC (0-4 fluency, coherence, relevance)",
+  "rubric_source_sha256": "3be763065e28d6ca6459f619d9e65e79979e58fadaeb4ec79cdbb747f0e3f3d7",
+  "suite": "suite_release_v002.json",
+  "suite_sha256": "a28bbe95eabdac4039771135d96ccaffcaf9be94da64eced12916e252732376b",
+  "candidate": "Sfull-r1 (preserved S-full baseline)",
+  "transcripts": {
+    "run": "runs/Sfull-r1-calibration (evaluate.py, dev split, 1 repeat, generated history; local receipt, not committed)",
+    "report_sha256": "f7d4f4d3187a0acf26d1166e41fa840066045bc67f2ecfbea456fb8bd2db1503",
+    "episodes_sha256": "d2543f4019d6dcab7480ad11df414c7b6ee7388b61b8ca17d051a0dd6b65f047",
+    "server_and_weights_stable": true
+  },
+  "ratings": [
+    {"case_id": "open_friend", "final_reply": "Sure, I can explain the feeling.", "fluency": null, "coherence": null, "relevance": null, "note": "not yet rated"},
+    {"case_id": "open_hobby", "final_reply": "I like to cook it in a pan", "fluency": 3, "coherence": 2, "relevance": 0},
+    {"case_id": "name_now", "final_reply": "My name is Nora.", "fluency": 2, "coherence": 1, "relevance": 0},
+    {"case_id": "pet_delayed", "final_reply": "Its name is Ted.", "fluency": 4, "coherence": 2, "relevance": 0},
+    {"case_id": "meeting_corrected", "final_reply": "I'm sorry. I'm not sure.", "fluency": 3, "coherence": 2, "relevance": 0}
+  ],
+  "use": "Calibration evidence for the v0.0.2 judgment gates: compare with the Gemini final-reply judgments of identical transcripts before any judge-based release claim. Not training data."
+}
