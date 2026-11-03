@@ -1,9 +1,32 @@
 import copy
 import unittest
+import argparse
+import json
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
+from evaluate import run
 from evaluate import score, summarise, compare
 from integrations import validate_judgment
 
 class EvaluationTests(unittest.TestCase):
+    def test_malformed_reply_and_final_health_failure_preserve_receipts(self):
+        for malformed in ({"choices":None}, {"choices":[None]}, {"choices":[{"message":None}]}):
+            with self.subTest(reply=malformed), tempfile.TemporaryDirectory() as directory:
+                root=Path(directory)
+                (root/"model.gguf").write_bytes(b"fixture")
+                (root/"suite.json").write_text(json.dumps({"cases":[{"id":"a","family":"qa","split":"dev","users":["Hi"],"check":{"kind":"exact","answers":["Hello"]}}]}))
+                args=argparse.Namespace(url="http://127.0.0.1:8081",suite=str(root/"suite.json"),split="dev",allow_holdout=False,repeats=1,weights=str(root/"model.gguf"),out=str(root/"out"),candidate="fixture",server_identity="fixture")
+                replies=[({"model":"model.gguf"},0),({"data":[{"id":"fixture"}]},0),(malformed,1),RuntimeError("health unavailable")]
+                with patch("evaluate.curl_json",side_effect=replies), self.assertRaises(SystemExit):run(args)
+                report=json.loads((root/"out/report.json").read_text())
+                self.assertEqual(report["summary"]["operational_errors"],1)
+                self.assertFalse(report["server_and_weights_stable"])
+                self.assertIn("final_observation_error",report)
+                row=json.loads((root/"out/episodes.jsonl").read_text())
+                self.assertEqual(row["turns"][0]["response"],malformed)
+                self.assertIsNone(row["exact_pass"])
+
     def test_exact_recall_cannot_be_gamed_by_listing_alternatives(self):
         case={"check":{"kind":"exact","answers":["Thursday"]}}
         self.assertTrue(score(case,"Thursday."))

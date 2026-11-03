@@ -1,6 +1,6 @@
 # tinychat-eval
 
-A small, independent evaluation repo for the Paperkiln → GGUF → Ember chat loop.
+A small, independent evaluation repo for the Paperkiln â†’ GGUF â†’ Ember chat loop.
 The core uses Python's standard library and actual curl requests. No PyTorch is needed.
 Langfuse is an experiment dashboard; local immutable receipts remain authoritative.
 
@@ -22,7 +22,7 @@ does not pass a Thursday-only question. They measure successful answer-and-forma
 contracts, not all possible semantically correct paraphrases. Unknown-information cases
 ask whether a fact was supplied; they do not rely on a judge guessing factual truth.
 
-Coherence, fluency and relevance are separate 0–4 rubric judgments with evidence.
+Coherence, fluency and relevance are separate 0â€“4 rubric judgments with evidence.
 They are UNJUDGED until the opt-in judge runs. A fluent answer can be irrelevant or
 wrong. Judge scores never overwrite exact task results. Gemini is a fallible external
 annotator, not an oracle; inspect the transcript and disagreement before acting.
@@ -61,6 +61,7 @@ never copy secrets into this repo. Read only the needed keys at runtime.
 ```powershell
 python integrations.py publish --env-file ../.env --report runs/baseline/report.json --name sfull-baseline
 python integrations.py judge --env-file ../.env --report runs/baseline/report.json --out runs/baseline/judgment.json --model gemini-3.1-pro-preview --max-calls 4 --limit 4
+python integrations.py publish --env-file ../.env --report runs/baseline/report.json --judgments runs/baseline/judgment.json --name sfull-baseline-judged
 ```
 
 Publication uploads synthetic episodes and selected hashes, not health paths, private
@@ -105,3 +106,24 @@ Measure retrieval recall, supported-answer accuracy, citation support and refusa
 information is absent. RAG can supply facts; it cannot establish conversational memory
 or repair an incoherent model merely by being attached. This is a proposed next phase,
 not a new task to launch before the existing backlog closes.
+
+## First baseline and review (3 November 2026)
+
+The preserved S-full SFT1500 CPU server completed 26 development episodes,
+with all 13 complete-conversation repeat pairs identical. None of the 22 strict
+answer/format checks passed. That is not zero recall: Nora and blue survived
+in replies that violated the requested answer format; delayed Basil became Ted.
+Keep the raw replies when interpreting these scores. Four separately recorded
+Gemini pilot judgments suggest sentence fluency can coexist with poor relevance;
+these selected cases are not an overall ability estimate. Holdout remains unused.
+
+Original local receipts: runs/sfull-baseline-20261103/. Langfuse contains the
+original baseline and a separately named judged experiment. Review found malformed
+HTTP-200 response shapes could abort the original runner before recording an
+episode. The repaired runner preserves malformed raw responses and final-health
+failures in its report; six offline tests pass. A fresh baseline under the repaired
+harness lives in runs/sfull-baseline-fixed-20261103/. Original receipts and judge
+ratings retain their original hashes and are not relabelled as repaired-run data.
+
+Runs are ignored local artifacts, not committed training material. This repository
+is local only so far, with no remote or public licence selected.

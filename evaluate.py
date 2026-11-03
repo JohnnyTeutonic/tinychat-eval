@@ -117,10 +117,14 @@ def run(args):
                         messages.append({"role":"user", "content":user})
                         request = dict(SETTINGS, model=model, messages=list(messages))
                         reply, elapsed = curl_json(args.url.rstrip("/")+"/v1/chat/completions", request)
-                        choice = reply["choices"][0]
-                        text = choice["message"]["content"]
-                        if not isinstance(text, str): raise ValueError("nontext model reply")
                         row["turns"].append({"request":request, "response":reply, "wall_ms":elapsed})
+                        if not isinstance(reply, dict) or not isinstance(reply.get("choices"), list) or not reply["choices"]:
+                            raise ValueError("malformed choices in model reply")
+                        choice = reply["choices"][0]
+                        if not isinstance(choice, dict) or not isinstance(choice.get("message"), dict):
+                            raise ValueError("malformed message in model reply")
+                        text = choice["message"].get("content")
+                        if not isinstance(text, str): raise ValueError("nontext model reply")
                         row["replies"].append(text)
                         messages.append({"role":"assistant", "content":text})
                     row["exact_pass"] = score(case, row["replies"][-1])
@@ -130,9 +134,16 @@ def run(args):
                 journal.write(json.dumps(row,ensure_ascii=False)+"\n")
                 journal.flush()
                 rows.append(row)
-    final_health, _ = curl_json(args.url.rstrip("/")+"/health")
-    unchanged = final_health == health and digest(weights.read_bytes()) == weight_sha
+    final_error = None
+    try:
+        final_health, _ = curl_json(args.url.rstrip("/")+"/health")
+        unchanged = final_health == health and digest(weights.read_bytes()) == weight_sha
+    except (RuntimeError, ValueError, OSError, subprocess.TimeoutExpired) as error:
+        unchanged = False
+        final_error = type(error).__name__ + ": " + str(error)
     report = {"metadata":metadata,"server_and_weights_stable":unchanged,"episodes":rows,"summary":summarise(rows)}
+    if final_error:
+        report["final_observation_error"] = final_error
     (out/"report.json").write_bytes(canonical(report))
     print(json.dumps(report["summary"],indent=2))
     if not unchanged or report["summary"]["operational_errors"]:

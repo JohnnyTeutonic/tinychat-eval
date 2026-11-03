@@ -55,7 +55,7 @@ def judge(args):
             "judge_model":args.model,"judge_source_sha256":hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),"sdk_version":importlib.metadata.version("google-genai"),"max_output_tokens":1024,"temperature":0,"max_calls":args.max_calls,"judgments":[]}
     # Exclusive reservation prevents spending again by overwriting a prior judgment run.
     with out.open("x",encoding="utf-8") as f:json.dump(result,f)
-    client=genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    client=genai.Client(api_key=os.environ["GEMINI_API_KEY"],http_options=types.HttpOptions(timeout=60000))
     schema={"type":"object","properties":{k:{"type":"integer","minimum":0,"maximum":4} for k in ["fluency","coherence","relevance"]},"required":["fluency","coherence","relevance","evidence"],"additionalProperties":False}
     schema["properties"]["evidence"]={"type":"string","maxLength":500}
     for row in rows:
@@ -66,8 +66,9 @@ def judge(args):
                 contents=RUBRIC+"\nDATA:\n"+json.dumps({"messages":context,"final_reply":row["replies"][-1]}),
                 config=types.GenerateContentConfig(temperature=0,max_output_tokens=1024,
                     response_mime_type="application/json",response_json_schema=schema))
-            record.update(status="JUDGED",value=validate_judgment(json.loads(response.text)),
-                          usage=response.usage_metadata.model_dump(mode="json") if response.usage_metadata else None)
+            record["usage"]=response.usage_metadata.model_dump(mode="json") if response.usage_metadata else None
+            record["raw_text"]=response.text
+            record.update(status="JUDGED",value=validate_judgment(json.loads(response.text)))
         except Exception as error:
             # SDK exception text can contain request configuration; keep the type only.
             record["error_type"]=type(error).__name__
@@ -87,6 +88,14 @@ def publish(args):
     client=Langfuse(public_key=os.environ["LANGFUSE_PUBLIC_KEY"],secret_key=os.environ["LANGFUSE_SECRET_KEY"],
         base_url=os.environ.get("LANGFUSE_BASE_URL",os.environ.get("LANGFUSE_HOST")))
     if not client.auth_check():raise RuntimeError("Langfuse authentication failed")
+    judged={}
+    judgment_metadata={}
+    if args.judgments:
+        j=json.loads(Path(args.judgments).read_text())
+        if j["report_sha256"]!=hashlib.sha256(Path(args.report).read_bytes()).hexdigest():
+            raise ValueError("judgments refer to another report")
+        judged={x["case_id"]:validate_judgment(x["value"]) for x in j["judgments"] if x["status"]=="JUDGED"}
+        judgment_metadata={"judge_model":j["judge_model"],"rubric_sha256":j["rubric_sha256"]}
     cases={c["id"]:c for c in suite["cases"]}
     namespace="tinychat-"+report["metadata"]["split"]+"-"+report["metadata"]["suite_sha256"][:12]
     client.create_dataset(name=namespace,description="Frozen synthetic tiny-chat pilot. Local receipts authoritative; no training use.")
@@ -98,14 +107,18 @@ def publish(args):
             expected_output=cases[row["case_id"]]["check"],metadata={"family":row["family"]})
         # Do not upload machine paths, credentials, health or unrelated personal transcripts.
         outputs[identity]={k:row[k] for k in ("case_id","repeat","family","complete","replies","exact_pass")}
+        outputs[identity]["judge"]=judged.get(row["case_id"]) if row["repeat"]==0 else None
     dataset=client.get_dataset(namespace)
     def task(*,item,**kw):return outputs[item.id]
     def evaluator(*,output,**kw):
         values=[Evaluation(name="execution.complete",value=float(output["complete"]))]
         if output["exact_pass"] is not None:values.append(Evaluation(name="contract.exact",value=float(output["exact_pass"])))
+        if output.get("judge"):
+            for key in ("fluency","coherence","relevance"):
+                values.append(Evaluation(name="judge."+key,value=float(output["judge"][key]),comment=output["judge"]["evidence"]))
         return values
     dataset.run_experiment(name=args.name,task=task,evaluators=[evaluator],max_concurrency=1,
-        metadata={k:report["metadata"][k] for k in ("suite_sha256","harness_sha256","weights_sha256","candidate","settings")})
+        metadata=dict({k:report["metadata"][k] for k in ("suite_sha256","harness_sha256","weights_sha256","candidate","settings")},**judgment_metadata))
     client.flush()
     print(json.dumps({"dataset":namespace,"run":args.name,"episodes":len(outputs)}))
 
@@ -117,7 +130,7 @@ def main():
     j.add_argument("--report",required=True);j.add_argument("--out",required=True)
     j.add_argument("--model",required=True);j.add_argument("--max-calls",type=int,required=True);j.add_argument("--limit",type=int,default=4)
     s=sub.add_parser("publish")
-    s.add_argument("--report",required=True);s.add_argument("--suite",default=str(Path(__file__).with_name("suite.json")));s.add_argument("--name",required=True)
+    s.add_argument("--report",required=True);s.add_argument("--suite",default=str(Path(__file__).with_name("suite.json")));s.add_argument("--name",required=True);s.add_argument("--judgments")
     for parser in (j,s):parser.add_argument("--env-file",required=True)
     a=p.parse_args();load_env(a.env_file)
     if a.command=="judge":judge(a)
