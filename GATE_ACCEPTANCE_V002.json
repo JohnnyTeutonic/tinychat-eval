@@ -1,0 +1,78 @@
+{
+  "version": "v0.0.2-acceptance-1",
+  "accepted": true,
+  "accepted_utc": "2026-11-03T11:16:15.397664+00:00",
+  "authority": "Jonathan accepted v0.0.2 training and delegated release engineering; Codex records acceptance before any candidate evaluation.",
+  "gate_spec_sha256": "989c84d8b1fda80139cdf0905c36a19e1c5c400a61d1267ffce2406fc6d2d074",
+  "evaluation_manifest_sha256": "cf1db5d762077a8356543d36e7df37262055b16612719f4d23b9f4c733b79ab5",
+  "accepted_criteria": {
+    "version": "v0.0.2-draft1",
+    "accepted": false,
+    "launch_allowed": false,
+    "primary_history_mode": "generated",
+    "decoding": "unchanged SETTINGS in evaluate.py",
+    "operations": {
+      "complete_fraction": 1.0,
+      "repeat_identical_fraction": 1.0,
+      "stable_server_required": true,
+      "export_parity_required": true
+    },
+    "task_correctness": {
+      "dev_exact_min": 0.25,
+      "min_additional_distinct_cases_over_matched_baseline": 2,
+      "max_regressed_distinct_cases": 0
+    },
+    "recall": {
+      "immediate_exact_min": 0.5,
+      "delayed_exact_min": 0.25,
+      "correction_exact_min": 0.5
+    },
+    "transfer": {
+      "holdout_exact_min": 0.5,
+      "max_regressed_cases": 0
+    },
+    "judgments": {
+      "subset": [
+        "open_friend",
+        "open_hobby",
+        "name_now",
+        "pet_delayed",
+        "meeting_corrected"
+      ],
+      "repeat": 0,
+      "turns": "all",
+      "model": "gemini-3.1-pro-preview",
+      "relevance_at_least_3_fraction": 0.7,
+      "coherence_at_least_3_fraction": 0.7,
+      "paired_regression_tolerance": 0,
+      "require_complete": true,
+      "calibration": "human or independent rubric review before accepting thresholds"
+    },
+    "semantic_content": {
+      "release_gate": false,
+      "meaning": "answer mention and negation flags, not semantic correctness; review paraphrase/role/contradiction separately"
+    },
+    "stopping": {
+      "max_training_candidates": 2,
+      "max_updates_each": 256,
+      "holdout_once_after_dev_selection": true,
+      "failure": "retain baseline, publish all outcomes, no automatic added steps/candidates",
+      "meaning": "bounded engineering release target, not optimality or scientific population claim"
+    },
+    "threshold_status": "Prospective engineering targets proposed before new candidate outputs; not calibrated population estimates; acceptance required"
+  },
+  "precedence": "This separate receipt accepts the original draft criteria without rewriting the frozen draft, pilot gold or historical receipts. No thresholds changed.",
+  "judgment_status": {
+    "release_gate_retained": true,
+    "calibration_complete": false,
+    "release_blocked_until_calibration_requirement_satisfied": true,
+    "uncalibrated_scores": "diagnostic only; cannot certify release"
+  },
+  "candidate_outputs_evaluated_before_acceptance": false,
+  "interpretation": {
+    "report": "Counts and denominators, not population estimates; greedy repeats do not multiply independent cases.",
+    "holdout": "Held-out instances of trained skills, not transfer to previously untrained behaviour.",
+    "exact_gain": "Read alongside separate semantic-content diagnostics to distinguish formatting gains from content gains.",
+    "new_context_and_rag_instruments": "Diagnostic only; excluded from frozen release gates."
+  }
+}
