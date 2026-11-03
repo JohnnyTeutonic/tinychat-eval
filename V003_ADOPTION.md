@@ -3,9 +3,9 @@
 Jonathan authorised training on 3 November after discussing targeted synthetic
 augmentation. The original v0.0.2 proposal/manifest remain unchanged. Its release
 criteria and matched numerical recipes remain the intended acceptance targets.
-This addendum supersedes only the common training packet: v3 retains all4072
-balanced Smol-SmolTalk rows and adds1077 distinct programmatically labelled skill
-conversations. Both arms use the identical shuffled5149row packet. Data receipt:
+This addendum supersedes only the common training packet: v3 retains all 4,072
+balanced Smol-SmolTalk rows and adds 1,077 distinct programmatically labelled skill
+conversations. Both arms use the identical shuffled 5,149-row packet. Data receipt:
 training_data_v003.json. No candidate output informed this amendment.
 
 The eight augmentation kinds are arithmetic Q&A, alternative choice, formatting,
@@ -13,7 +13,7 @@ immediate recall, delayed recall, corrections, unknown information and continuit
 Answers derive from explicit input facts or exact operations; no model API calls.
 Generation completes without reading evaluation data. An exclusion-only audit then
 rejects exact evaluation messages or normalized contiguous eight-word matches.
-Exact segment duplicates are removed. Full exchanges fit context1024. This is not
+Exact segment duplicates are removed. Full exchanges fit context 1024. This is not
 a semantic near-duplicate guarantee or evidence of semantic generalisation. Some
 small template families have few distinct rows after duplicate removal; report that
 limitation rather than padding by repeated copies. No human transcript is included.
@@ -26,8 +26,8 @@ provider launch. Training authorisation does not declare the model release passe
 
 The frozen evaluation is rerun on preserved S-full under the new instrument, with
 untouched release-only cases reserved until candidate selection. Original chat
-continues to serve. US$3perarm/US$6totalGPUcap and four-hour perarm deadlines remain;
-all failed attempts count, with account US$10reserve. No API judging is launched by
+continues to serve. US$3 per arm / US$6 total GPU cap and four-hour per-arm deadlines remain;
+all failed attempts count, with account US$10 reserve. No API judging is launched by
 this data amendment.
 
 ## Execution update: 3 November 2026
