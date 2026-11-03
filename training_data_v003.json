@@ -1,0 +1,44 @@
+{
+  "version": "v0.0.2-training-adoption-v3",
+  "supersedes_data_only": "training_data_v002.json",
+  "training_packet": {
+    "kind": "PROSPECTIVE_AUGMENTED_PACKET_V3",
+    "complete": true,
+    "rows": 5149,
+    "counts": {
+      "base": 4072,
+      "qa": 237,
+      "choice": 255,
+      "format": 34,
+      "immediate": 177,
+      "delayed": 166,
+      "correction": 152,
+      "unknown": 48,
+      "continuity": 8
+    },
+    "rejected": {
+      "generated_exact_duplicate": 971
+    },
+    "train_sha256": "a319c322b0d7a5f134ecd22223b8c7f6b11277794a8ed485ee0aaf085ad59602",
+    "base_sha256": "adce0e30d73c0dd6e30f3faaa2c0fea9e568f699c23f11e79da40d2d39a8f241",
+    "vocab_sha256": "0b880aa073a7e27c0770d5ecc5215b55d6d415080d20bd3dc7b169ecabadf198",
+    "generator_sha256": "f12b449955838349f625d554989a1d5232a337a1f0ec8dbe20d0e7e808eb0338",
+    "evaluation_exclusion_suite_sha256": "a28bbe95eabdac4039771135d96ccaffcaf9be94da64eced12916e252732376b",
+    "audit": "exact text and normalized contiguous8word overlap excluded; exact segment duplicates removed; not a semantic near-duplicate guarantee",
+    "generation_evaluation_access": false,
+    "T": 1024
+  },
+  "acceptance": "Jonathan authorised launching release training after requesting skill augmentation",
+  "numerical_specs_unchanged": [
+    "training_lr3e5_v002.json",
+    "training_lr1e4_v002.json"
+  ],
+  "no_gold_to_generator": true,
+  "training_input_allowlist": [
+    "training_<arm>_v002.json",
+    "uplift_train.jsonl",
+    "sfull_sft1500.safetensors",
+    "vocab.gguf"
+  ],
+  "full_state_admission_pending": true
+}
