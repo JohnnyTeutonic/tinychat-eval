@@ -108,8 +108,12 @@ as asking about a small technical manual with cited evidence and an 'unknown' op
 Evaluate raw model, retrieval with an oracle answer, and model+retrieval separately.
 Measure retrieval recall, supported-answer accuracy, citation support and refusal when
 information is absent. RAG can supply facts; it cannot establish conversational memory
-or repair an incoherent model merely by being attached. This is a proposed next phase,
-not a new task to launch before the existing backlog closes.
+or repair an incoherent model merely by being attached. The instrument exists
+(`rag_eval.py`, `manual_v001.json`: a fictional 20-section device manual, 15 dev and
+11 holdout questions, 7 of them absent-answer, and a stdlib BM25 retriever), so it is
+frozen before any candidate is read. It is a diagnostic, not a release gate, and
+training for it waits until short conversation is reliable.
+`python rag_eval.py retrieval` reports retrieval recall without a server.
 
 ## First baseline and review (3 November 2026)
 
