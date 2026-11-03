@@ -1,0 +1,2 @@
+langfuse==5.1.0
+google-genai==2.10.0
