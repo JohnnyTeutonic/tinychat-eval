@@ -1,0 +1,13 @@
+# The frozen v0.0.2 manifest (evaluation_manifest_v002_final.json) hashes these files with CRLF line endings, as a
+# Windows checkout writes them. They check out with CRLF everywhere, so freeze.py --check verifies on Linux too; the
+# repository still stores LF.
+evaluate.py text eol=crlf
+integrations.py text eol=crlf
+suite.json text eol=crlf
+suite_release_v002.json text eol=crlf
+release_gate_v002.json text eol=crlf
+training_lr3e5_v002.json text eol=crlf
+training_lr1e4_v002.json text eol=crlf
+V002_RELEASE.md text eol=crlf
+freeze.py text eol=crlf
+training_data_v002.json text eol=crlf
