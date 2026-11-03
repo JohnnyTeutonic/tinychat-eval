@@ -29,7 +29,7 @@ annotator, not an oracle; inspect the transcript and disagreement before acting.
 
 ## Run
 
-The server must already be running. Do not stop Jonathan's chat session.
+The server must already be running. Preserve any existing interactive chat session.
 
 ```powershell
 python evaluate.py run --weights C:/ml_artifacts/sfull_local_chat_20261103/tc_sft_Sfull_r1.gguf --server-identity archived-ember-cpu-server-Sfull-20261103 --candidate sfull-baseline --out runs/baseline
@@ -125,5 +125,5 @@ failures in its report; six offline tests pass. A fresh baseline under the repai
 harness lives in runs/sfull-baseline-fixed-20261103/. Original receipts and judge
 ratings retain their original hashes and are not relabelled as repaired-run data.
 
-Runs are ignored local artifacts, not committed training material. This repository
-is local only so far, with no remote or public licence selected.
+Runs are ignored local artifacts, not committed training material. Repository: https://github.com/JohnnyTeutonic/tinychat-eval.
+No licence has been selected yet.
