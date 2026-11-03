@@ -1,0 +1,322 @@
+{
+  "version": "release-0.0.2-draft1",
+  "training_use": "forbidden",
+  "cases": [
+    {
+      "id": "qa_sum",
+      "family": "basic_qa",
+      "split": "dev",
+      "users": [
+        "What is two plus three? Reply with just the number."
+      ],
+      "check": {
+        "kind": "exact",
+        "answers": [
+          "5",
+          "five"
+        ]
+      }
+    },
+    {
+      "id": "qa_colour",
+      "family": "basic_qa",
+      "split": "dev",
+      "users": [
+        "What colour is a ripe banana? Reply with just the colour."
+      ],
+      "check": {
+        "kind": "exact",
+        "answers": [
+          "yellow"
+        ]
+      }
+    },
+    {
+      "id": "name_now",
+      "family": "immediate_recall",
+      "split": "dev",
+      "users": [
+        "My name is Nora.",
+        "What is my name? Reply with just my name."
+      ],
+      "check": {
+        "kind": "exact",
+        "answers": [
+          "Nora"
+        ]
+      }
+    },
+    {
+      "id": "object_now",
+      "family": "immediate_recall",
+      "split": "dev",
+      "users": [
+        "My bicycle is blue.",
+        "What colour is my bicycle? Reply with just the colour."
+      ],
+      "check": {
+        "kind": "exact",
+        "answers": [
+          "blue"
+        ]
+      }
+    },
+    {
+      "id": "pet_delayed",
+      "family": "delayed_recall",
+      "split": "dev",
+      "users": [
+        "My cat is named Basil.",
+        "I enjoy walking in the park.",
+        "Today is quite sunny.",
+        "What is my cat named? Reply with just the name."
+      ],
+      "check": {
+        "kind": "exact",
+        "answers": [
+          "Basil"
+        ]
+      }
+    },
+    {
+      "id": "place_delayed",
+      "family": "delayed_recall",
+      "split": "dev",
+      "users": [
+        "I left the keys in the drawer.",
+        "I am planning a short walk.",
+        "What should I take if it rains?",
+        "Where did I leave the keys? Reply with just the place."
+      ],
+      "check": {
+        "kind": "exact",
+        "answers": [
+          "drawer",
+          "the drawer"
+        ]
+      }
+    },
+    {
+      "id": "meeting_corrected",
+      "family": "correction",
+      "split": "dev",
+      "users": [
+        "Our meeting is on Tuesday.",
+        "Correction: the meeting is on Thursday, not Tuesday.",
+        "Which day is our meeting? Reply with just the day."
+      ],
+      "check": {
+        "kind": "exact",
+        "answers": [
+          "Thursday"
+        ]
+      }
+    },
+    {
+      "id": "colour_corrected",
+      "family": "correction",
+      "split": "dev",
+      "users": [
+        "My bag is red.",
+        "I was mistaken. My bag is green, not red.",
+        "What colour is my bag? Reply with just the colour."
+      ],
+      "check": {
+        "kind": "exact",
+        "answers": [
+          "green"
+        ]
+      }
+    },
+    {
+      "id": "unknown_name",
+      "family": "missing_information",
+      "split": "dev",
+      "users": [
+        "I bought a notebook today.",
+        "Have I told you my name? Reply yes or no."
+      ],
+      "check": {
+        "kind": "exact",
+        "answers": [
+          "no"
+        ]
+      }
+    },
+    {
+      "id": "unknown_pet",
+      "family": "missing_information",
+      "split": "dev",
+      "users": [
+        "My cat likes sleeping.",
+        "Have I told you my cat's name? Reply yes or no."
+      ],
+      "check": {
+        "kind": "exact",
+        "answers": [
+          "no"
+        ]
+      }
+    },
+    {
+      "id": "format_only",
+      "family": "instruction",
+      "split": "dev",
+      "users": [
+        "Reply with exactly this word and nothing else: lantern"
+      ],
+      "check": {
+        "kind": "exact",
+        "answers": [
+          "lantern"
+        ]
+      }
+    },
+    {
+      "id": "open_friend",
+      "family": "open_conversation",
+      "split": "dev",
+      "users": [
+        "What makes someone a good friend?",
+        "Can you explain one of those qualities with an example?"
+      ],
+      "check": {
+        "kind": "unscored"
+      }
+    },
+    {
+      "id": "open_hobby",
+      "family": "open_conversation",
+      "split": "dev",
+      "users": [
+        "I am learning to bake bread.",
+        "What is one small thing I could try next time?"
+      ],
+      "check": {
+        "kind": "unscored"
+      }
+    },
+    {
+      "id": "holdout_container",
+      "family": "release_transfer",
+      "split": "holdout",
+      "users": [
+        "The parcel goes in locker seven. The spare cable goes in locker nine.",
+        "Which locker holds the parcel? Reply with just the number."
+      ],
+      "check": {
+        "kind": "exact",
+        "answers": [
+          "seven",
+          "7"
+        ]
+      }
+    },
+    {
+      "id": "holdout_owner",
+      "family": "release_transfer",
+      "split": "holdout",
+      "users": [
+        "I lent a map to Iona and a torch to Felix.",
+        "Who has the torch? Reply with just the name."
+      ],
+      "check": {
+        "kind": "exact",
+        "answers": [
+          "Felix"
+        ]
+      }
+    },
+    {
+      "id": "transfer_choice",
+      "family": "transfer_alternative",
+      "split": "holdout",
+      "users": [
+        "The copper ticket belongs to Mira; the silver ticket belongs to Owen.",
+        "Who has the silver ticket? Reply with just the name."
+      ],
+      "check": {
+        "kind": "exact",
+        "answers": [
+          "Owen"
+        ]
+      }
+    },
+    {
+      "id": "transfer_update",
+      "family": "transfer_correction",
+      "split": "holdout",
+      "users": [
+        "The workshop is on Friday. Correction: it is on Monday.",
+        "Which day is the workshop? Reply with just the day."
+      ],
+      "check": {
+        "kind": "exact",
+        "answers": [
+          "Monday"
+        ]
+      }
+    },
+    {
+      "id": "transfer_delay",
+      "family": "transfer_delayed_recall",
+      "split": "holdout",
+      "users": [
+        "My dog is named Clover.",
+        "I am considering a walk.",
+        "Please acknowledge.",
+        "What is my dog named? Reply with just the name."
+      ],
+      "check": {
+        "kind": "exact",
+        "answers": [
+          "Clover"
+        ]
+      }
+    },
+    {
+      "id": "transfer_unknown",
+      "family": "transfer_unknown",
+      "split": "holdout",
+      "users": [
+        "I own a bicycle.",
+        "Did I tell you its colour? Reply yes or no."
+      ],
+      "check": {
+        "kind": "exact",
+        "answers": [
+          "no"
+        ]
+      }
+    },
+    {
+      "id": "transfer_format",
+      "family": "transfer_instruction",
+      "split": "holdout",
+      "users": [
+        "Return exactly the word: pebble"
+      ],
+      "check": {
+        "kind": "exact",
+        "answers": [
+          "pebble"
+        ]
+      }
+    },
+    {
+      "id": "transfer_fact",
+      "family": "transfer_immediate_recall",
+      "split": "holdout",
+      "users": [
+        "The spare cup is purple.",
+        "What colour is the spare cup? Reply with just the colour."
+      ],
+      "check": {
+        "kind": "exact",
+        "answers": [
+          "purple"
+        ]
+      }
+    }
+  ]
+}

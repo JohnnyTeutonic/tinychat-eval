@@ -1,0 +1,91 @@
+{
+  "version": "v0.0.2-draft1",
+  "status": "DATA_PROVENANCE_NOT_COVERAGE_APPROVAL",
+  "source": {
+    "dataset": "HuggingFaceTB/smol-smoltalk",
+    "revision": "f73fe857d519ff6ac5af2ea67c4d3834da7b8bcc",
+    "card_url": "https://huggingface.co/datasets/HuggingFaceTB/smol-smoltalk/raw/f73fe857d519ff6ac5af2ea67c4d3834da7b8bcc/README.md",
+    "card_sha256": "4de8fe5ebb738a835f780332c35ec5a7dd1e8dae058308e7caa176dca6bbf808",
+    "shard_sha256": "498cd4580014f42c40cfde066573564ed28e3e1548a5566715b615f5ea932856",
+    "shard_bytes": 229710350,
+    "scope": "one of four training shards; no claim of full corpus coverage"
+  },
+  "token_packet": {
+    "context": 1024,
+    "complete": true,
+    "splits": {
+      "train": {
+        "counts": {
+          "candidates": 4096,
+          "rows": 4072,
+          "assistant_turns": 8825,
+          "multi_turn_rows": 2997,
+          "cut_exchanges": 1832,
+          "no_complete_exchange_fits": 24
+        },
+        "sources": {
+          "smol-magpie-ultra-short": 2560,
+          "self-oss-instruct": 253,
+          "openhermes-50k": 266,
+          "everyday-conversations": 484,
+          "explore-instruct-rewrite": 256,
+          "smol-contraints": 253
+        }
+      },
+      "holdout": {
+        "counts": {
+          "candidates": 512,
+          "rows": 509,
+          "assistant_turns": 1056,
+          "multi_turn_rows": 374,
+          "cut_exchanges": 236,
+          "no_complete_exchange_fits": 3
+        },
+        "sources": {
+          "smol-magpie-ultra-short": 367,
+          "openhermes-50k": 32,
+          "smol-contraints": 33,
+          "self-oss-instruct": 33,
+          "explore-instruct-rewrite": 29,
+          "everyday-conversations": 15
+        }
+      }
+    },
+    "source_hashes": {
+      "chat_data.py": "4d9b8571d6ebb9a6480500f143ed257454094f527255ea1fb0f20e24fee3cc87",
+      "chat_template.py": "437b4e06483196f93592bfe6ca7a150122d3e08ca474da7f7a08abdcf98ce356",
+      "llama3_bpe.py": "3d0426ba5632de17c5f2507d45e066b277b7bdb4334339b21330fcaed88dd135",
+      "bpe.py": "25607be05b41881d0238796b616cb697031c8ebf89623bc4c4537f8aaf56de39"
+    },
+    "selection": "75% multi-turn candidates; source round robin without replacement; seeded shuffle",
+    "selection_seed": 1,
+    "builder_sha256": "02b41665ded6f598634cdf415b849cbddb3c21b0125ccd68184217708ea92760",
+    "vocab_sha256": "0b880aa073a7e27c0770d5ecc5215b55d6d415080d20bd3dc7b169ecabadf198",
+    "train_input_sha256": "b898fe0c49872e3d228466fe068ab697e33a414b2df6d7bde4cf5fa16a4d95ab",
+    "train_output_sha256": "adce0e30d73c0dd6e30f3faaa2c0fea9e568f699c23f11e79da40d2d39a8f241",
+    "holdout_input_sha256": "9fd65b48343a3a40b0683db65ba4cf66b071b8c2ba2b9d0df45efd16f3bb3897",
+    "holdout_output_sha256": "ecb01512fa0c38ad108dd54e9b9ae9ffb5c8017fefc4e69ac178555aea26f974"
+  },
+  "baseline_weights_sha256": "886e7db5dc2dc457f01d5f21847e5d63dc50e02785562d167d253e46c0f834f1",
+  "baseline_gguf_sha256": "b84aa1c4028992deae47ad3b446ff26ef18af8f86cb2d8648c4bd65b78f68f5d",
+  "training_upload_allowlist": [
+    "training_lr3e5_v002.json",
+    "uplift_train.jsonl",
+    "sfull_sft1500.safetensors",
+    "vocab.gguf"
+  ],
+  "forbidden_uploads": [
+    "suite.json",
+    "suite_release_v002.json",
+    "evaluation transcripts",
+    "evaluation expected answers",
+    "holdout.jsonl"
+  ],
+  "requires_before_admission": [
+    "decoded training coverage audit",
+    "evaluation contamination/near-duplicate audit",
+    "exact trainer/engine source and build freeze",
+    "full-state recovery validation",
+    "release specification acceptance"
+  ]
+}

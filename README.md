@@ -1,6 +1,6 @@
 # tinychat-eval
 
-A small, independent evaluation repo for the Paperkiln â†’ GGUF â†’ Ember chat loop.
+A small, independent evaluation repo for the Paperkiln Ã¢â€ â€™ GGUF Ã¢â€ â€™ Ember chat loop.
 The core uses Python's standard library and actual curl requests. No PyTorch is needed.
 Langfuse is an experiment dashboard; local immutable receipts remain authoritative.
 
@@ -22,7 +22,7 @@ does not pass a Thursday-only question. They measure successful answer-and-forma
 contracts, not all possible semantically correct paraphrases. Unknown-information cases
 ask whether a fact was supplied; they do not rely on a judge guessing factual truth.
 
-Coherence, fluency and relevance are separate 0â€“4 rubric judgments with evidence.
+Coherence, fluency and relevance are separate 0Ã¢â‚¬â€œ4 rubric judgments with evidence.
 They are UNJUDGED until the opt-in judge runs. A fluent answer can be irrelevant or
 wrong. Judge scores never overwrite exact task results. Gemini is a fallible external
 annotator, not an oracle; inspect the transcript and disagreement before acting.
@@ -127,3 +127,14 @@ ratings retain their original hashes and are not relabelled as repaired-run data
 
 Runs are ignored local artifacts, not committed training material. Repository: https://github.com/JohnnyTeutonic/tinychat-eval.
 No licence has been selected yet.
+
+## v0.0.2 preparation
+
+See [V002_RELEASE.md](V002_RELEASE.md) for the controlled training matrix,
+proposed release gates, bounded compute, rollback and verified CLI forms.
+[evaluation_manifest_v002_final.json](evaluation_manifest_v002_final.json) binds
+the new instrument and proposal; validate with `python freeze.py --check
+evaluation_manifest_v002_final.json`. The original pilot suite/results stay unchanged.
+New reference-based semantic ratings and per-turn ratings are optional separate
+diagnostics; no new cloud judging or training was launched during preparation.
+Release specification acceptance and admission prerequisites are still required.

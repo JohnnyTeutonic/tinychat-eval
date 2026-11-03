@@ -1,0 +1,16 @@
+{
+  "version": "v0.0.2-draft1",
+  "files": {
+    "evaluate.py": "364ffe891bc5c5d9ab55bd559da9ef212fbce48c8d174ce0705730ac00f78ff5",
+    "integrations.py": "3be763065e28d6ca6459f619d9e65e79979e58fadaeb4ec79cdbb747f0e3f3d7",
+    "suite.json": "cfff40f8121a7c810cbd832b9ad4b073b048c5ad9ff2d39e640549e72d3da418",
+    "suite_release_v002.json": "a28bbe95eabdac4039771135d96ccaffcaf9be94da64eced12916e252732376b",
+    "release_gate_v002.json": "989c84d8b1fda80139cdf0905c36a19e1c5c400a61d1267ffce2406fc6d2d074",
+    "training_lr3e5_v002.json": "28fd73dc470cc03680c0dc5110df47c1479535b2c58ce2817aa1c372a589cef3",
+    "training_lr1e4_v002.json": "78db20e0c49c1f1f5c92acf28ea26f1616a4c69e6dbdee51a19abdec666f372b",
+    "V002_RELEASE.md": "2ef52e815e7d179eba0ac09f75dd67bf2994185d3cae2aa457902f4102a85df5",
+    "freeze.py": "e59f311a4e044dcc4bf1819cd0095218e0ad77c9db5d66b76a07a8e64d69915e",
+    "training_data_v002.json": "dea5c2c74a74af45fca922fa080010cc0d116be7857e12917b0d7b9aae722840"
+  },
+  "status": "FROZEN_PROPOSAL_NOT_LAUNCH_APPROVAL"
+}

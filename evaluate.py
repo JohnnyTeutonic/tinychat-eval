@@ -35,6 +35,16 @@ def score(case, text):
     raise ValueError("unregistered scoring contract")
 
 
+def semantic_content(case, text):
+    """Lexical content diagnostic, not semantic truth or a release pass."""
+    if case["check"]["kind"] != "exact": return None
+    words = " " + normalise(text) + " "
+    found = [a for a in case["check"]["answers"] if " " + normalise(a) + " " in words]
+    negated = bool(re.search(r"\b(no|not|never|isnt|isn't|dont|don't)\b", text.casefold()))
+    return {"answer_mentioned": bool(found), "negation_flag": negated,
+            "interpretation": "CONTENT_MENTION_ONLY_NOT_CORRECTNESS"}
+
+
 def curl_json(url, payload=None, timeout=45):
     args = ["curl", "--silent", "--show-error", "--max-time", str(timeout),
             "--write-out", "\n%{http_code}", url]
@@ -102,7 +112,7 @@ def run(args):
                 "weights_sha256": weight_sha, "health": health, "model_id": model,
                 "settings": SETTINGS, "split": args.split, "repeats": args.repeats,
                 "started_at": started, "candidate": args.candidate, "endpoint": args.url,
-                "server_identity": args.server_identity,
+                "server_identity": args.server_identity, "history_mode": getattr(args,"history_mode","generated"),
                 "limitation": "Model filename and local artifact hash do not prove loaded server bytes; server identity is operator supplied."}
     (out/"metadata.json").write_bytes(canonical(metadata))
     rows = []
@@ -126,8 +136,9 @@ def run(args):
                         text = choice["message"].get("content")
                         if not isinstance(text, str): raise ValueError("nontext model reply")
                         row["replies"].append(text)
-                        messages.append({"role":"assistant", "content":text})
+                        messages.append({"role":"assistant", "content":text if metadata["history_mode"]=="generated" else "Noted."})
                     row["exact_pass"] = score(case, row["replies"][-1])
+                    row["semantic_content"] = semantic_content(case, row["replies"][-1])
                     row["complete"] = True
                 except (RuntimeError, ValueError, KeyError, IndexError, subprocess.TimeoutExpired) as error:
                     row["error"] = type(error).__name__ + ": " + str(error)
@@ -151,8 +162,8 @@ def run(args):
 
 
 def compare(a,b):
-    for key in ("suite_sha256","harness_sha256","settings","split","repeats"):
-        if a["metadata"][key] != b["metadata"][key]: raise ValueError("incompatible comparison: "+key)
+    for key in ("suite_sha256","harness_sha256","settings","split","repeats","history_mode"):
+        if a["metadata"].get(key) != b["metadata"].get(key): raise ValueError("incompatible comparison: "+key)
     if not all(x["server_and_weights_stable"] and not x["summary"]["operational_errors"] for x in (a,b)):
         raise ValueError("incomplete or changing-server comparison")
     if [(r["case_id"],r["repeat"]) for r in a["episodes"]] != [(r["case_id"],r["repeat"]) for r in b["episodes"]]:
@@ -168,6 +179,7 @@ def main():
     r.add_argument("--suite",default=str(Path(__file__).with_name("suite.json")))
     r.add_argument("--split",choices=["dev","holdout"],default="dev")
     r.add_argument("--allow-holdout",action="store_true")
+    r.add_argument("--history-mode",choices=["generated","controlled"],default="generated",help="controlled replaces preceding assistant outputs with frozen Noted.; diagnostic only")
     r.add_argument("--repeats",type=int,default=2)
     r.add_argument("--weights",required=True)
     r.add_argument("--server-identity",required=True)

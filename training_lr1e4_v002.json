@@ -1,0 +1,50 @@
+{
+  "name": "sfull_uplift_lr1e4",
+  "arch": {
+    "preset": "llama-tiny",
+    "rope_heads": "all",
+    "custom": {
+      "d": 768,
+      "layers": 8,
+      "heads": 12,
+      "d_ff": 2240
+    },
+    "state_tokens": {
+      "k": 4,
+      "mask": "causal"
+    }
+  },
+  "data": {
+    "vocab": "/content/chat/upload/vocab.gguf",
+    "vocab_cap": 16384,
+    "T": 1024,
+    "sft_examples": "/content/chat/upload/uplift_train.jsonl"
+  },
+  "train": {
+    "objective": "sft",
+    "steps": 256,
+    "lr": 0.0001,
+    "batch": 16,
+    "accum": 1,
+    "clip": 1.0,
+    "eval_every": 32,
+    "eval_batch": 8,
+    "checkpoint_every": 25,
+    "gradmap_every": 0,
+    "seed": 1,
+    "optimizer": "adamw",
+    "init_from": "/content/chat/upload/sfull_sft1500.safetensors",
+    "lr_schedule": {
+      "warmup_steps": 32,
+      "decay": "cosine",
+      "min_lr_frac": 0.1
+    }
+  },
+  "export": {
+    "formats": [
+      "safetensors",
+      "gguf"
+    ]
+  },
+  "out_dir": "/content/chat/sfull_uplift_lr1e4"
+}
