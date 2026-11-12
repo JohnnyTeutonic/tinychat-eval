@@ -7,7 +7,10 @@
   "gate_spec": "release_gate_v003.json",
   "gate_spec_sha256": "64041cff910d61a32057c500fc0e44a96a5ac2ee79aee80be0c4bbd3965e8156",
   "evaluation_manifest": "evaluation_manifest_v003.json",
-  "evaluation_manifest_sha256": "6618c4a8c8ff77085c6f6c87019a7b43f117ff2657452c07be6c28d4a254508c",
+  "evaluation_manifest_sha256": "658deceecc1ad9aaa4339ce6a11f384595f8e30099ec992b2c3f010689b0f489",
+  "rebinding": [
+    "2026-11-12T19:30:34Z (13 Nov 2026 AEDT): the manifest was re-bound to include the public-mode provenance update (provenance.py from agent A's 9b1c4bf: a public ember server verifies on the weights digest; compare reports runtime settings as not compared). Only provenance.py's hash changed (989242c9 to 0659bc0a); the manifest hash changed from 6618c4a8 to 658decee; the gate specification (64041cff) is unchanged. This was still before any v0.0.3 candidate was evaluated, and no holdout had been opened."
+  ],
   "hash_form": "CRLF checkout bytes, as for v0.0.2; .gitattributes checks every bound file out with CRLF",
   "fixed_before_any_v003_candidate_evaluated": true,
   "v003_candidate_outputs_evaluated_before_acceptance": false,
