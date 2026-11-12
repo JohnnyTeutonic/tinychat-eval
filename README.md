@@ -74,7 +74,9 @@ differ). `verify` reads saved receipts only, and a check can only make a run's s
 receipts from servers without a digest, including every run before 13 November 2026, are
 `unverified`, never `verified`. `compare` works on `evaluate.py` runs only; it refuses
 `mismatch` and `changed` runs, unverified ones unless `--allow-unverified`, and two servers
-whose build, executable or settings differ unless `--allow-engine-change`. The digest is the
+whose build, executable or settings differ unless `--allow-engine-change`. A public server
+(`EMBER_PUBLIC=1`) reports no paths, compiler or `EMBER_*` settings: its runs still verify on the
+weights digest, but runtime settings cannot be compared against it (compare says so). The digest is the
 server's own report: it catches the wrong file, a stale server, a mid-run restart and changed
 settings, not a server that misreports, nor a rewrite that keeps a file's size, modification
 time and inode.

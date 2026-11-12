@@ -104,6 +104,9 @@ def classify(health, local_sha256):
     replacing = [n for n in REPLACING_SETTINGS if n in names]
     if replacing:
         return "unverified", ["the server replaces the model's computation: " + ", ".join(replacing) + " set"]
+    if prov.get("public") is True:
+        # EMBER_PUBLIC=1 hides the EMBER_* record (ember refuses scripted replies there; EMBER_IR is not visible).
+        return "verified", ["public server: weights digest verified; runtime settings not reported"]
     return "verified", []
 
 
@@ -113,7 +116,12 @@ def engine_identity(health):
     if prov is None:
         return None
     runtime = prov.get("runtime") if isinstance(prov.get("runtime"), dict) else {}
-    return {"build": prov.get("build"), "executable_sha256": (prov.get("executable") or {}).get("sha256"),
+    build = dict(prov.get("build") or {})
+    if prov.get("public") is True:  # a public server reports no compiler and no EMBER_* record
+        build.pop("compiler", None)
+        return {"build": build, "executable_sha256": (prov.get("executable") or {}).get("sha256"),
+                "runtime": None}
+    return {"build": build, "executable_sha256": (prov.get("executable") or {}).get("sha256"),
             "runtime": {k: runtime.get(k) for k in ("gpu_layers_requested", "ember_env", "ember_settings",
                                                     "ember_side_files")}}
 
@@ -272,9 +280,17 @@ def compare(before_dir, after_dir, allow_unverified=False, allow_engine_change=F
     if None in engines:
         engine = {"same": None, "differences": ["engine identity unknown for a run without server provenance"]}
     else:
+        public = engines[0]["runtime"] is None or engines[1]["runtime"] is None
+        if public:  # compare what both report: the build less its compiler, and the executable
+            for e in engines:
+                e["build"].pop("compiler", None)
         diffs = [k for k in ("build", "executable_sha256") if engines[0][k] != engines[1][k]]
-        diffs += ["runtime." + k for k in engines[0]["runtime"] if engines[0]["runtime"][k] != engines[1]["runtime"][k]]
-        engine = {"same": not diffs, "differences": diffs}
+        if not public:
+            diffs += ["runtime." + k for k in engines[0]["runtime"]
+                      if engines[0]["runtime"][k] != engines[1]["runtime"][k]]
+        engine = {"same": (False if diffs else None) if public else not diffs, "differences": diffs}
+        if public:
+            engine["note"] = "runtime settings not compared: a public server does not report them"
         if diffs and not allow_engine_change:
             raise ValueError("the two servers differ in " + ", ".join(diffs) +
                              " (pass --allow-engine-change to compare across engines)")

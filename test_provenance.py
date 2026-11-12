@@ -323,6 +323,30 @@ class ProvenanceTests(unittest.TestCase):
             provenance.compare(self.root / "a", sweep)
         self.assertIn("evaluate.py runs only", str(e.exception))
 
+    def test_public_server_verifies_on_digest_without_runtime_comparison(self):
+        # EMBER_PUBLIC=1 (Jonathan, 13 Nov 2026): no paths, compiler or EMBER_* record.
+        def public(sha, instance="p" * 32, commit="0" * 40):
+            p = ember_provenance(sha, instance=instance)
+            p["public"] = True
+            del p["weights"]["path"], p["executable"]["path"], p["build"]["compiler"]
+            for k in ("ember_env", "ember_settings", "ember_side_files"):
+                del p["runtime"][k]
+            p["build"]["git_commit"] = commit
+            return p
+        status, reasons = provenance.classify({"provenance": public(self.sha)}, self.sha)
+        self.assertEqual(status, "verified")
+        self.assertIn("runtime settings not reported", reasons[0])
+        self.assertEqual(provenance.classify({"provenance": public("f" * 64)}, self.sha)[0], "mismatch")
+        self.assertEqual(self.run_with(FakeServer(public(self.sha)), out="pub"), 0)
+        self.run_with(FakeServer(ember_provenance(self.sha, env=["EMBER_KV"], settings={"EMBER_KV": "q8_0"})),
+                      out="local")
+        result = provenance.compare(self.root / "pub", self.root / "local")
+        self.assertIsNone(result["provenance"]["engine"]["same"])
+        self.assertIn("not compared", result["provenance"]["engine"]["note"])
+        self.run_with(FakeServer(public(self.sha, commit="1" * 40)), out="pub2")
+        with self.assertRaises(ValueError):  # the build is still compared
+            provenance.compare(self.root / "pub", self.root / "pub2")
+
     def test_historical_receipts_verify_read_only(self):
         """Opt-in: TCE_HISTORICAL_RUNS=dir1:dir2 (saved runs); each is classified, none is modified."""
         dirs = [d for d in os.environ.get("TCE_HISTORICAL_RUNS", "").split(os.pathsep) if d]
