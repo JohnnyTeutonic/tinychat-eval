@@ -45,7 +45,29 @@ changed suite, harness, settings, split, repeat count or episode inventory, and 
 operationally incomplete or changing-server runs. Candidate model weights can change.
 Record whether engine, template, tokenizer, precision or hardware also changed before
 attributing a score difference to training. The model filename plus a file hash does
-not prove what bytes the live server loaded; server identity is operator supplied.
+not prove what bytes the live server loaded; `--server-identity` is an operator label.
+
+### Server provenance
+
+An ember server with load-time provenance (ember `docs/USAGE.md`, "Provenance") reports in
+`/health` the SHA-256 of the weights it hashed and loaded, its build (git commit, dirty state,
+backend, compiler), its executable's SHA-256 and an id new to each process. `provenance.py`
+uses that without changing the frozen instruments (their hashes and the v0.0.2 manifest stay valid):
+
+```powershell
+python provenance.py run evaluate -- --weights MODEL.gguf --server-identity ID --candidate NAME --out runs/NAME
+python provenance.py verify runs/NAME
+python provenance.py compare runs/BEFORE runs/AFTER
+```
+
+`run` refuses before writing anything when the server's digest differs from the local file's,
+or when the server reports none (`--allow-unverified` records such a run as unverified). It
+queries `/health` again at the end and writes `runs/NAME/provenance.json`; a restart or swap
+mid-run is `changed`. `verify` reads saved receipts only: receipts from servers without a
+digest, including every run before 13 November 2026, are `unverified`, never `verified`.
+`compare` refuses `mismatch` and `changed` runs, and unverified ones unless
+`--allow-unverified`. The digest is the server's own report: it catches the wrong file, a stale
+server and a mid-run restart, not a server that misreports.
 
 The runner is local HTTP only. Client wall time is diagnostic, not a warmed hardware
 speed benchmark. Verify token usage/context capacity before interpreting long-history
