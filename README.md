@@ -154,4 +154,10 @@ the new instrument and proposal; validate with `python freeze.py --check
 evaluation_manifest_v002_final.json`. The original pilot suite/results stay unchanged.
 New reference-based semantic ratings and per-turn ratings are optional separate
 diagnostics; no new cloud judging or training was launched during preparation.
-Release specification acceptance and admission prerequisites are still required.
+[GATE_ACCEPTANCE_V002.json](GATE_ACCEPTANCE_V002.json) accepts the unchanged draft
+criteria, recorded on 3 November 2026 before any candidate output was read. Its
+judgment gates stay blocked until the calibration requirement is met; the four blind
+human ratings in `calibration/` are final-reply ratings, while the gate rates every
+turn of its five cases, and no agreement criterion has been fixed. As of 13 November
+2026 no evaluation of a v0.0.2 training candidate against these gates is recorded.
+Admission prerequisites remain.
