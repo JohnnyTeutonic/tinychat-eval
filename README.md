@@ -184,7 +184,13 @@ harness lives in runs/sfull-baseline-fixed-20261103/. Original receipts and judg
 ratings retain their original hashes and are not relabelled as repaired-run data.
 
 Runs are ignored local artifacts, not committed training material. Repository: https://github.com/JohnnyTeutonic/tinychat-eval.
-No licence has been selected yet.
+
+## Licence
+
+MIT; see [LICENSE](LICENSE). The licence covers the code and the data files alike.
+One request that is not a licence term: please do not train models on the suites, the
+manual, the context-sweep probes or recorded evaluation conversations. Training on
+them makes these instruments useless for the models trained on them.
 
 ## v0.0.2 preparation
 
