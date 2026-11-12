@@ -176,6 +176,30 @@ passes a delayed-recall, basic Q&A or missing-information case. These are develo
 not release candidates, and the holdout has still never been run. Their receipts
 are local to that workspace.
 
+**What a strict miss means.** These checks pass only an exact, bare answer: the
+right fact inside a longer sentence, with extra words, or with a hedge fails, and so
+does a reply that is right in content but wrong in form. A strict score is therefore
+a floor on content, not a measure of it, and a low one does not say whether the model
+lacked the fact or only failed the format. The judged and rule-scored reads of the
+same models moved much further than the strict checks: on the parent programme's
+13-turn judged relevance read, S-full SFT1500 scored 19 of 52 and S71 36; on its
+told-recall rule, 7 of 108 and 62. Those are different instruments with their own
+protocols, recorded in paperkiln's `docs/CAPABILITY.md`; they are not comparable
+with this suite's counts. Two limits of this suite also bear on any reading: the
+three "Have I told you…?" cases all have gold "no", so a model that always answers
+"No." passes them; and repeats are greedy and identical, so two repeats are one
+observation, not two.
+
+**How little these models were trained.** The models are small (72,761,088
+parameters) and saw little data for their size. S-full's base saw 163.84M positions,
+about 2.3 tokens per parameter; base A, under every model from 9 November, saw
+983.04M, about 13.5. That is near the order of a compute-optimal budget (roughly 20
+tokens per parameter) but far below current small open models: SmolLM2-135M was
+trained on about 2 trillion tokens, roughly 15,000 per parameter. Low strict scores
+should be read in that light. The next base (base 2, 18 × 512, in training from
+13 November 2026) is registered at 250,000 steps of 16,384 positions, about 59
+tokens per parameter; nothing is claimed for it until it is evaluated.
+
 Original local receipts: runs/sfull-baseline-20261103/. Langfuse contains the
 original baseline and a separately named judged experiment. Review found malformed
 HTTP-200 response shapes could abort the original runner before recording an
