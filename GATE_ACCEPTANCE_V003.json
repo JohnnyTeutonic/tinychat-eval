@@ -1,0 +1,24 @@
+{
+  "version": "v0.0.3-acceptance-1",
+  "accepted": true,
+  "accepted_utc": "2026-11-12T19:22:55Z",
+  "accepted_local_date": "13 Nov 2026 (AEDT)",
+  "authority": "Jonathan decided on 13 Nov 2026, relayed by the engineering-audit coordinator: verified server provenance required, judgment gates diagnostic only, and this record. Claude Opus 5.5 wrote the specification and this record on 13 Nov 2026.",
+  "gate_spec": "release_gate_v003.json",
+  "gate_spec_sha256": "64041cff910d61a32057c500fc0e44a96a5ac2ee79aee80be0c4bbd3965e8156",
+  "evaluation_manifest": "evaluation_manifest_v003.json",
+  "evaluation_manifest_sha256": "6618c4a8c8ff77085c6f6c87019a7b43f117ff2657452c07be6c28d4a254508c",
+  "hash_form": "CRLF checkout bytes, as for v0.0.2; .gitattributes checks every bound file out with CRLF",
+  "fixed_before_any_v003_candidate_evaluated": true,
+  "v003_candidate_outputs_evaluated_before_acceptance": false,
+  "holdout_opened": false,
+  "holdout_evidence": "No run with --split holdout is recorded: the 71 release_dev reports of the chat-screens lane (3 to 11 Nov 2026) and the local runs in tinychat-eval/runs and ~/claude_tinychat_eval/runs are all development-split runs.",
+  "decisions": [
+    {"item": "provenance", "decision": "a run whose provenance.verify status is not 'verified' fails the gate", "by": "Jonathan, 13 Nov 2026"},
+    {"item": "B3 judgment gates", "decision": "diagnostic only: reported, never pass or fail", "by": "Jonathan, 13 Nov 2026"},
+    {"item": "B2 denominators", "decision": "dev_exact_min is taken over the scored development cases (11 of 13 at present); family and holdout criteria over their scored cases; a case passes when every repeat passes", "by": "Claude Opus 5.5, 13 Nov 2026, because unscored cases cannot pass; Jonathan may override in a later version"},
+    {"item": "B1 missing information", "decision": "carried as a stated limit; a corrected case set belongs in a new suite version, proposed and not built", "by": "Jonathan, 13 Nov 2026"}
+  ],
+  "disclosure": "The thresholds are v0.0.2's, unchanged. Development outputs of the S-full baseline and of 71 screening models had been read before this record, and the denominator was chosen knowing that three of them (S67, S72s2, S71s2) pass exactly 3 of 11 scored cases. None of those models is a v0.0.3 candidate, and no v0.0.3 candidate exists yet.",
+  "precedence": "v0.0.2's gate, manifest, acceptance record, suites, gold and every receipt are unchanged. This record governs only candidates evaluated under v0.0.3."
+}

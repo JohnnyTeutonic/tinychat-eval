@@ -208,3 +208,26 @@ human ratings in `calibration/` are final-reply ratings, while the gate rates ev
 turn of its five cases, and no agreement criterion has been fixed. As of 13 November
 2026 no evaluation of a v0.0.2 training candidate against these gates is recorded.
 Admission prerequisites remain.
+
+## v0.0.3 release specification
+
+[release_gate_v003.json](release_gate_v003.json) is the release specification for
+candidates evaluated from 13 November 2026, fixed before any v0.0.3 candidate was
+evaluated and before any holdout run ([GATE_ACCEPTANCE_V003.json](GATE_ACCEPTANCE_V003.json)).
+It keeps v0.0.2's thresholds, suite and harness, and v0.0.2's files stay unchanged. It differs in
+three ways:
+
+- Every run the verdict reads, candidate and baseline alike, must be `verified` by
+  `provenance.py`. Receipts from servers without a load-time digest, including the
+  S-full baseline, are not, so a baseline is rerun on a provenance-reporting server.
+- Judge ratings are diagnostic: reported, never pass or fail (Jonathan, 13 November 2026).
+- Each threshold says what it is a fraction of: `dev_exact_min` is taken over the scored
+  development cases (11 of 13), the family and holdout criteria over their scored cases,
+  and a case passes when every repeat passes. Claude Opus 5.5 chose this on 13 November
+  2026, because unscored cases cannot pass; Jonathan may override it in a later version.
+
+It states the missing-information limit above; a suite version with matched 'yes' cases
+is proposed there and not built. Evaluate a candidate offline with
+`python gate_v003.py --candidate-dev runs/C --baseline-dev runs/B --candidate-holdout runs/CH
+--baseline-holdout runs/BH --export-parity passed` (exit 0 pass, 1 fail, 2 incomplete), and
+check the binding with `python freeze_v003.py --check evaluation_manifest_v003.json`.

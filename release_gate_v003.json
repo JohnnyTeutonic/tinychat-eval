@@ -1,0 +1,94 @@
+{
+  "version": "v0.0.3",
+  "kind": "release specification, prospective: fixed before any v0.0.3 candidate is evaluated",
+  "relation_to_v002": "v0.0.2's files (release_gate_v002.json, evaluation_manifest_v002_final.json, GATE_ACCEPTANCE_V002.json) stay unchanged. This specification keeps v0.0.2's thresholds and changes three things: verified server provenance is required, the judgment gates are diagnostic only, and every denominator is defined.",
+  "evaluator": "gate_v003.py",
+  "instrument": {
+    "suite": "suite_release_v002.json",
+    "suite_sha256": "a28bbe95eabdac4039771135d96ccaffcaf9be94da64eced12916e252732376b",
+    "harness": "evaluate.py",
+    "harness_sha256": "364ffe891bc5c5d9ab55bd559da9ef212fbce48c8d174ce0705730ac00f78ff5",
+    "decoding": "unchanged SETTINGS in evaluate.py",
+    "history_mode": "generated",
+    "min_repeats": 2
+  },
+  "provenance": {
+    "required_status": "verified",
+    "check": "provenance.verify(run_dir)['status'] for every run the verdict reads: candidate and matched baseline, development and holdout",
+    "consequence": "a run whose status is not 'verified' fails the gate; --allow-unverified runs and every receipt from a server without a load-time digest are not 'verified'",
+    "decided_by": "Jonathan, 13 Nov 2026 (engineering audit, items B11 and provenance)"
+  },
+  "operations": {
+    "complete_fraction": 1.0,
+    "repeat_identical_fraction": 1.0,
+    "stable_server_required": true,
+    "export_parity_required": true,
+    "export_parity_evidence": "supplied by the operator from the export parity check; the evaluator cannot compute it, and the gate cannot pass without it"
+  },
+  "units": {
+    "case": "one scenario of the suite; greedy repeats of a case are one case, not several",
+    "case_passes": "every repeat of the case passes its exact check (with repeat_identical_fraction 1.0 this is the same as its first repeat)",
+    "dev_exact_denominator": "the scored development cases: development cases whose check kind is 'exact' (11 of the 13 development cases of suite_release_v002.json; open_friend and open_hobby are unscored)",
+    "family_denominator": "the scored development cases of that family (two each for immediate_recall, delayed_recall and correction)",
+    "holdout_denominator": "the scored holdout cases (8 of 8)",
+    "chosen_by": "Claude Opus 5.5, 13 Nov 2026 (engineering audit, item B2), because unscored cases cannot pass; Jonathan may override this choice in a later version",
+    "known_when_chosen": "v0.0.2 left the denominator undefined. Development outputs of the S-full baseline and of 71 screening models had been read when this was chosen, and three screening models (S67, S72s2, S71s2) pass exactly 3 of 11 scored cases, which meets 0.25 over 11 but not over 13. None of those models is a v0.0.3 candidate."
+  },
+  "task_correctness": {
+    "dev_exact_min": 0.25,
+    "min_additional_distinct_cases_over_matched_baseline": 2,
+    "max_regressed_distinct_cases": 0
+  },
+  "recall": {
+    "immediate_exact_min": 0.5,
+    "delayed_exact_min": 0.25,
+    "correction_exact_min": 0.5,
+    "families": {
+      "immediate_exact_min": "immediate_recall",
+      "delayed_exact_min": "delayed_recall",
+      "correction_exact_min": "correction"
+    }
+  },
+  "transfer": {
+    "holdout_exact_min": 0.5,
+    "max_regressed_cases": 0,
+    "meaning": "held-out instances of trained skills, not transfer to untrained behaviour"
+  },
+  "judgments": {
+    "role": "diagnostic_only",
+    "affects_verdict": false,
+    "reported": "relevance and coherence: the fraction of judged turns rated 3 or more, with the counts of judged and failed calls",
+    "subset": [
+      "open_friend",
+      "open_hobby",
+      "name_now",
+      "pet_delayed",
+      "meeting_corrected"
+    ],
+    "repeat": 0,
+    "turns": "all",
+    "decided_by": "Jonathan, 13 Nov 2026 (engineering audit, item B3)",
+    "reason": "the recorded calibration covers four final replies, the judgment rates every turn of five cases, and no agreement criterion is fixed; uncalibrated ratings are reported, never pass or fail"
+  },
+  "semantic_content": {
+    "release_gate": false,
+    "meaning": "answer mention and negation flags, not semantic correctness; adjudicate every fail-to-pass flip from the transcripts"
+  },
+  "stated_limits": [
+    "Missing information: the three 'Have I told you ...?' cases (unknown_name, unknown_pet, transfer_unknown) all have the gold answer 'no' and none asks about a fact that was supplied, so a model that answers 'No.' to any yes/no question passes them. Their passes count toward dev_exact_min and holdout_exact_min under this specification; read them with the replies.",
+    "Counts and denominators, not population estimates: 11 development and 8 holdout authored cases; greedy repeats do not multiply cases.",
+    "The holdout gold is public: holdout separation is operator separation, not secrecy.",
+    "Server provenance is the server's own report: it guards against operator error and stale or swapped servers, not against a server that misreports."
+  ],
+  "proposed_next_suite": "Not built here. A new suite version, frozen before any candidate is read, would pair each missing-information case with a matched case whose fact was supplied (gold 'yes'), so that a constant answer passes at most half of the family.",
+  "stopping": {
+    "holdout_once_after_dev_selection": true,
+    "candidate_budget": "set by the training admission that names v0.0.3 candidates, before any of them is evaluated; this specification holds no budget of its own",
+    "failure": "retain the baseline, publish every outcome, no automatic added steps or candidates"
+  },
+  "verdicts": {
+    "pass": "every required criterion holds",
+    "fail": "a required criterion fails",
+    "incomplete": "no required criterion fails, but one cannot yet be evaluated (for example, the holdout runs or the export parity evidence are not supplied)"
+  }
+}
