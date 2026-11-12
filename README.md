@@ -133,6 +133,18 @@ Keep the raw replies when interpreting these scores. Four separately recorded
 Gemini pilot judgments suggest sentence fluency can coexist with poor relevance;
 these selected cases are not an overall ability estimate. Holdout remains unused.
 
+That paragraph describes the S-full pilot, not later models. From 3 to 11 November
+2026, 71 screening models trained in the parent workspace were read on
+`suite_release_v002.json`'s dev split with this harness, decoding, two repeats and
+generated history; every run completed, with identical repeats. The most any passes
+is 4 of 11 scored cases (five models, among them S69 and S70: `name_now`,
+`meeting_corrected`, `colour_corrected`, `format_only`); the latest, S71s2 on 11 November,
+passes 3 of 11. Delayed recall passed strictly only for three early screens
+(S12, S24 and S26: `pet_delayed`, "Basil"), and no model read after S26 on 5 November
+passes a delayed-recall, basic Q&A or missing-information case. These are development reads of screening models,
+not release candidates, and the holdout has still never been run. Their receipts
+are local to that workspace.
+
 Original local receipts: runs/sfull-baseline-20261103/. Langfuse contains the
 original baseline and a separately named judged experiment. Review found malformed
 HTTP-200 response shapes could abort the original runner before recording an
