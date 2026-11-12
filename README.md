@@ -21,6 +21,9 @@ Exact normalized answers are deliberately strict contracts: 'Tuesday or Thursday
 does not pass a Thursday-only question. They measure successful answer-and-format
 contracts, not all possible semantically correct paraphrases. Unknown-information cases
 ask whether a fact was supplied; they do not rely on a judge guessing factual truth.
+Every such case's gold answer is 'no', and no case asks about a fact that was supplied,
+so a model that answers 'No.' to any yes/no question passes them all. Read their passes
+with the replies, not as evidence that the model tracks what it was told.
 
 Coherence, fluency and relevance are separate 0–4 rubric judgments with evidence.
 They are UNJUDGED until the opt-in judge runs. A fluent answer can be irrelevant or
@@ -114,12 +117,17 @@ or repair an incoherent model merely by being attached. The instrument exists
 frozen before any candidate is read. It is a diagnostic, not a release gate, and
 training for it waits until short conversation is reliable.
 `python rag_eval.py retrieval` reports retrieval recall without a server.
+In the raw condition the device is fictional, so 'unknown' is the correct reply to every
+question, yet the summary files a raw 'unknown' to an answerable question under
+`false_refusal`: read raw `false_refusal` as correct abstention, not as an error.
 
 ## First baseline and review (3 November 2026)
 
 The preserved S-full SFT1500 CPU server completed 26 development episodes,
-with all 13 complete-conversation repeat pairs identical. None of the 22 strict
-answer/format checks passed. That is not zero recall: Nora and blue survived
+with all 13 complete-conversation repeat pairs identical. None of the 11 scored
+cases passed its strict answer/format check. The summary's 22 checks count each
+case's two identical greedy repeats, which are not independent evidence, so the
+unit is 11 cases. That is not zero recall: Nora and blue survived
 in replies that violated the requested answer format; delayed Basil became Ted.
 Keep the raw replies when interpreting these scores. Four separately recorded
 Gemini pilot judgments suggest sentence fluency can coexist with poor relevance;
@@ -128,8 +136,9 @@ these selected cases are not an overall ability estimate. Holdout remains unused
 Original local receipts: runs/sfull-baseline-20261103/. Langfuse contains the
 original baseline and a separately named judged experiment. Review found malformed
 HTTP-200 response shapes could abort the original runner before recording an
-episode. The repaired runner preserves malformed raw responses and final-health
-failures in its report; six offline tests pass. A fresh baseline under the repaired
+episode. The repaired runner preserves malformed JSON response shapes and final-health
+failures in its report; six offline tests pass. An HTTP-200 body that is not JSON is
+still recorded only as a JSONDecodeError operational error, without its bytes. A fresh baseline under the repaired
 harness lives in runs/sfull-baseline-fixed-20261103/. Original receipts and judge
 ratings retain their original hashes and are not relabelled as repaired-run data.
 
