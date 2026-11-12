@@ -1,30 +1,40 @@
-"""Server provenance for evaluation runs: did the live server serve the bytes the receipt names?
+"""Server provenance for evaluation runs: does the live server serve the file the receipt names?
 
     python provenance.py run evaluate [--allow-unverified] -- --weights M.gguf --server-identity ID --candidate C --out runs/X
     python provenance.py run context_sweep -- ...      (or rag_eval; the instrument's own run arguments after --)
     python provenance.py verify runs/X [runs/Y ...]
-    python provenance.py compare runs/BEFORE runs/AFTER [--allow-unverified]
+    python provenance.py compare runs/BEFORE runs/AFTER [--allow-unverified] [--allow-engine-change]
 
 The instruments (evaluate.py, context_sweep.py, rag_eval.py) hash the local weights file and check the
-model *filename* the server reports. They cannot tell whether the server loaded those bytes. An ember
-server built with load-time provenance reports, in GET /health, the SHA-256 of the weights file it hashed
-and loaded, its build (git commit, dirty state, backend, compiler), its executable's SHA-256 and an id new
-to each server process (ember model_provenance.h). This module uses that report without changing the frozen
-instruments: their bytes, and so their harness hashes and the v0.0.2 manifest, stay as they were.
+model *filename* the server reports. They cannot tell what the server loaded. An ember server with
+load-time provenance reports in GET /health (ember model_provenance.h, docs/USAGE.md "Provenance"): the
+SHA-256 of its .gguf as hashed at start, checked against the loader's descriptor after the load and, on
+POSIX, re-checked at every /health ("modified_since_load" once the mapped file changes); its build (git
+commit, dirty state, backend, compiler) and executable SHA-256; its EMBER_* settings (values, side-file
+digests, other names); and an id new to each process. This module uses that report without changing the
+frozen instruments: their bytes, and so their harness hashes and the v0.0.2 manifest, stay as they were.
 
-run      queries /health before the instrument starts and refuses, writing nothing, when the server's weights
-         digest differs from the local file's (exit 3) or when the server reports no digest (exit 3 unless
-         --allow-unverified; the run is then recorded as unverified). It runs the unchanged instrument, queries
-         /health again at the end, and writes RUN/provenance.json (new; exclusive create). A server restarted
-         or swapped mid-run shows as a changed provenance (the instance id changes on every restart).
-verify   classifies saved runs from report.json alone (the instrument already saves /health in its metadata
-         and compares the final /health with the first), plus provenance.json when present. Receipts made
-         before servers reported a digest load unchanged and are classified "unverified", never "verified".
-compare  is evaluate.py's compare, refused when either run is "mismatch" or "changed", and when either is
-         "unverified" unless --allow-unverified; the statuses are added to its output.
+Statuses, from best to worst: verified, unverified, changed, mismatch. A check can only move a run down
+this list, never up.
+  verified    the server reports a well-formed digest equal to the local file's, with no setting that
+              replaces the model's computation (EMBER_TEST_SCRIPTED_REPLIES, EMBER_IR)
+  unverified  no usable digest (an old server, a disabled digest, an unsupported format, a malformed or
+              unknown schema, a file modified since load) or such a setting
+  changed     the server or the receipt changed between observations (restart, swap, unstable run)
+  mismatch    the server's digest differs from the local file's
+
+run      queries /health before the instrument starts and refuses, writing nothing (exit 3), on a mismatch, on
+         an unreachable server, and on an unverified server unless --allow-unverified. It runs the unchanged
+         instrument, queries /health again at the end, and writes RUN/provenance.json (exclusive create).
+verify   classifies saved runs from report.json alone (the instrument saves its first /health and compares the
+         final one with it), plus provenance.json when present. Receipts made before servers reported a
+         digest load unchanged and are classified "unverified", never "verified".
+compare  evaluate.py's compare (evaluate runs only), refused when either run is "changed" or "mismatch", when
+         either is "unverified" unless --allow-unverified, and when the two servers' build, executable or
+         runtime settings differ unless --allow-engine-change; the statuses and differences are added.
 
 Trust: the digest is the server's own report. This guards against operator error (the wrong file, a stale
-server, a server restarted on other weights or another build), not against a server built to lie.
+server, a server restarted on other weights, settings or another build), not against a server built to lie.
 """
 import argparse
 import datetime
@@ -39,14 +49,23 @@ import sys
 import evaluate
 
 SCHEMA = "tinychat-eval/provenance/1"
+SERVER_SCHEMA = "ember.provenance/1"
 INSTRUMENTS = ("evaluate", "context_sweep", "rag_eval")
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
+RANK = {"verified": 0, "unverified": 1, "changed": 2, "mismatch": 3}
+# EMBER_* settings under which the replies are not the weights' own computation.
+REPLACING_SETTINGS = ("EMBER_TEST_SCRIPTED_REPLIES", "EMBER_IR")
 TRUST = ("Digest reported by the server itself: guards against operator error and stale or swapped servers, "
          "not against a server that misreports.")
 
 
 class ProvenanceRefused(Exception):
     """The server's identity does not support the run (raised before the instrument writes anything)."""
+
+
+def worse(status, other):
+    """The worse of two statuses: checks only ever move a run down (verified > unverified > changed > mismatch)."""
+    return status if RANK.get(status, 1) >= RANK.get(other, 1) else other
 
 
 def file_sha256(path):
@@ -64,15 +83,12 @@ def server_provenance(health):
 
 
 def classify(health, local_sha256):
-    """(status, reasons) for one /health against the local weights digest.
-
-    verified    the server reports a well-formed SHA-256 of its loaded weights equal to the local file's
-    mismatch    it reports one and it differs
-    unverified  it reports none (an old server, a disabled digest, an unsupported format, a malformed value)
-    """
+    """(status, reasons) for one /health against the local weights digest."""
     prov = server_provenance(health)
     if prov is None:
         return "unverified", ["server reported no provenance (a server older than load-time digests)"]
+    if prov.get("schema") != SERVER_SCHEMA:
+        return "unverified", ["unknown server provenance schema " + json.dumps(prov.get("schema"))]
     weights = prov.get("weights") if isinstance(prov.get("weights"), dict) else {}
     digest = weights.get("sha256")
     if weights.get("status") != "sha256":
@@ -83,7 +99,23 @@ def classify(health, local_sha256):
         return "unverified", ["local weights digest missing or malformed"]
     if digest != local_sha256:
         return "mismatch", ["server loaded weights " + digest + ", local file is " + local_sha256]
+    runtime = prov.get("runtime") if isinstance(prov.get("runtime"), dict) else {}
+    names = runtime.get("ember_env") if isinstance(runtime.get("ember_env"), list) else []
+    replacing = [n for n in REPLACING_SETTINGS if n in names]
+    if replacing:
+        return "unverified", ["the server replaces the model's computation: " + ", ".join(replacing) + " set"]
     return "verified", []
+
+
+def engine_identity(health):
+    """What must match between two runs besides the weights: build, executable and runtime settings."""
+    prov = server_provenance(health)
+    if prov is None:
+        return None
+    runtime = prov.get("runtime") if isinstance(prov.get("runtime"), dict) else {}
+    return {"build": prov.get("build"), "executable_sha256": (prov.get("executable") or {}).get("sha256"),
+            "runtime": {k: runtime.get(k) for k in ("gpu_layers_requested", "ember_env", "ember_settings",
+                                                    "ember_side_files")}}
 
 
 def _instrument_args(argv):
@@ -111,7 +143,10 @@ def run(instrument, argv, allow_unverified=False):
     if out.exists():
         raise ValueError("output directory exists: " + str(out))
     local = file_sha256(a.weights)
-    start = _observe(a.url)
+    try:
+        start = _observe(a.url)
+    except (RuntimeError, ValueError, OSError, subprocess.TimeoutExpired) as e:
+        raise ProvenanceRefused("no preflight /health: " + type(e).__name__ + ": " + str(e)) from e
     status, reasons = classify(start["health"], local)
     if status == "mismatch":
         raise ProvenanceRefused("; ".join(reasons))
@@ -143,21 +178,25 @@ def run(instrument, argv, allow_unverified=False):
     try:
         end = _observe(a.url)
         record["end"] = {k: end[k] for k in ("observed_at", "provenance")}
-        end_status, end_reasons = classify(end["health"], local)
         if end["provenance"] != start["provenance"]:
-            status, reasons = "changed", reasons + ["server provenance changed between start and end of the run"]
+            status = worse(status, "changed")
+            reasons = reasons + ["server provenance changed between start and end of the run"]
+            end_status, end_reasons = classify(end["health"], local)
             if end_status != "verified":
+                status = worse(status, end_status)
                 reasons += ["at the end: " + x for x in end_reasons]
     except (RuntimeError, ValueError, OSError, subprocess.TimeoutExpired) as e:
         record["end_error"] = type(e).__name__ + ": " + str(e)
-        status, reasons = "changed", reasons + ["no end observation: " + record["end_error"]]
+        status, reasons = worse(status, "changed"), reasons + ["no end observation: " + record["end_error"]]
     metadata_path = out / "metadata.json"
     if metadata_path.exists():
         meta = json.loads(metadata_path.read_text(encoding="utf-8"))
         if server_provenance(meta.get("health")) != start["provenance"]:
-            status, reasons = "changed", reasons + ["the instrument's first /health differs from the preflight"]
+            status = worse(status, "changed")
+            reasons = reasons + ["the instrument's first /health differs from the preflight"]
         if meta.get("weights_sha256") != local:
-            status, reasons = "changed", reasons + ["the instrument hashed different local weights"]
+            status = worse(status, "changed")
+            reasons = reasons + ["the instrument hashed different local weights"]
     record["status"], record["reasons"] = status, reasons
     with (out / "provenance.json").open("x", encoding="utf-8") as f:
         f.write(evaluate.canonical(record).decode())
@@ -170,30 +209,42 @@ def run(instrument, argv, allow_unverified=False):
 
 
 def verify(run_dir):
-    """{"status", "reasons", ...} for a saved run. Reads only; old receipts are classified, never rewritten."""
+    """{"status", "reasons", ...} for a saved run. Reads only; old receipts are classified, never rewritten.
+
+    The receipt's own classification comes first; every later check can only make it worse."""
     run_dir = Path(run_dir)
     report = json.loads((run_dir / "report.json").read_text(encoding="utf-8"))
-    meta = report.get("metadata", {})
+    meta = report.get("metadata") if isinstance(report.get("metadata"), dict) else {}
     status, reasons = classify(meta.get("health"), meta.get("weights_sha256"))
     stable = report.get("server_and_weights_stable")
     if stable is not True:
+        status = worse(status, "changed")
         reasons = reasons + ["the instrument did not record a stable server (server_and_weights_stable is "
                              + json.dumps(stable) + ")"]
-        if status == "verified":
-            status = "changed"
     record_path = run_dir / "provenance.json"
     record = None
     if record_path.exists():
-        record = json.loads(record_path.read_text(encoding="utf-8"))
-        if record.get("schema") != SCHEMA:
-            status, reasons = "unverified", reasons + ["unknown provenance schema " + json.dumps(record.get("schema"))]
+        try:
+            record = json.loads(record_path.read_text(encoding="utf-8"))
+        except ValueError:
+            record = {"schema": None}
+        if not isinstance(record, dict) or record.get("schema") != SCHEMA:
+            status = worse(status, "unverified")
+            reasons = reasons + ["provenance.json has an unknown schema or is unreadable"]
         else:
+            start = record.get("start") if isinstance(record.get("start"), dict) else {}
             if record.get("local_weights_sha256") != meta.get("weights_sha256"):
-                status, reasons = "changed", reasons + ["provenance.json names other local weights than the receipt"]
-            if record.get("start", {}).get("provenance") != server_provenance(meta.get("health")):
-                status, reasons = "changed", reasons + ["preflight provenance differs from the receipt's /health"]
-            if record.get("status") in ("mismatch", "changed") and status not in ("mismatch", "changed"):
-                status, reasons = record["status"], reasons + record.get("reasons", [])
+                status = worse(status, "changed")
+                reasons = reasons + ["provenance.json names other local weights than the receipt"]
+            if start.get("provenance") != server_provenance(meta.get("health")):
+                status = worse(status, "changed")
+                reasons = reasons + ["preflight provenance differs from the receipt's /health"]
+            if record.get("status") not in RANK:
+                status = worse(status, "unverified")
+                reasons = reasons + ["provenance.json records an unknown status " + json.dumps(record.get("status"))]
+            elif RANK[record["status"]] > RANK[status]:
+                status = record["status"]
+                reasons = reasons + list(record.get("reasons") or [])
     elif server_provenance(meta.get("health")) is None:
         reasons = reasons + ["legacy receipt: no provenance.json"]
     prov = server_provenance(meta.get("health")) or {}
@@ -205,16 +256,30 @@ def verify(run_dir):
             "operator_server_identity": meta.get("server_identity")}
 
 
-def compare(before_dir, after_dir, allow_unverified=False):
+def compare(before_dir, after_dir, allow_unverified=False, allow_engine_change=False):
+    reports = [json.loads((Path(d) / "report.json").read_text(encoding="utf-8")) for d in (before_dir, after_dir)]
+    for d, r in zip((before_dir, after_dir), reports):
+        instrument = (r.get("metadata") or {}).get("instrument", "evaluate")
+        if instrument != "evaluate":
+            raise ValueError("compare supports evaluate.py runs only; " + str(d) + " is a " + str(instrument) + " run")
     checks = [verify(before_dir), verify(after_dir)]
     for c in checks:
         if c["status"] in ("mismatch", "changed"):
             raise ValueError("provenance " + c["status"] + " for " + c["run"] + ": " + "; ".join(c["reasons"]))
         if c["status"] == "unverified" and not allow_unverified:
             raise ValueError("provenance unverified for " + c["run"] + ": " + "; ".join(c["reasons"]))
-    a, b = (json.loads((Path(d) / "report.json").read_text(encoding="utf-8")) for d in (before_dir, after_dir))
-    result = evaluate.compare(a, b)
-    result["provenance"] = {"before": checks[0], "after": checks[1]}
+    engines = [engine_identity(r["metadata"].get("health")) for r in reports]
+    if None in engines:
+        engine = {"same": None, "differences": ["engine identity unknown for a run without server provenance"]}
+    else:
+        diffs = [k for k in ("build", "executable_sha256") if engines[0][k] != engines[1][k]]
+        diffs += ["runtime." + k for k in engines[0]["runtime"] if engines[0]["runtime"][k] != engines[1]["runtime"][k]]
+        engine = {"same": not diffs, "differences": diffs}
+        if diffs and not allow_engine_change:
+            raise ValueError("the two servers differ in " + ", ".join(diffs) +
+                             " (pass --allow-engine-change to compare across engines)")
+    result = evaluate.compare(*reports)
+    result["provenance"] = {"before": checks[0], "after": checks[1], "engine": engine}
     return result
 
 
@@ -238,6 +303,7 @@ def main(argv=None):
     c.add_argument("before")
     c.add_argument("after")
     c.add_argument("--allow-unverified", action="store_true")
+    c.add_argument("--allow-engine-change", action="store_true")
     a = p.parse_args(argv)
     if a.command == "run":
         try:
@@ -249,7 +315,7 @@ def main(argv=None):
         results = [verify(d) for d in a.runs]
         print(json.dumps(results, indent=2))
         return 0 if all(x["status"] == "verified" for x in results) else 1
-    print(json.dumps(compare(a.before, a.after, a.allow_unverified), indent=2))
+    print(json.dumps(compare(a.before, a.after, a.allow_unverified, a.allow_engine_change), indent=2))
     return 0
 
 

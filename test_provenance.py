@@ -17,14 +17,15 @@ ROOT = Path(__file__).parent
 FROZEN = ("evaluate.py", "context_sweep.py", "rag_eval.py")
 
 
-def ember_provenance(sha, instance="a" * 32, status="sha256"):
+def ember_provenance(sha, instance="a" * 32, status="sha256", env=None, settings=None, side_files=None):
     return {"schema": "ember.provenance/1", "instance_id": instance,
             "weights": {"status": status, "sha256": sha if status == "sha256" else None, "bytes": 7,
-                        "path": "/models/model.gguf"},
+                        "path": "/models/model.gguf", "monitored": True},
             "build": {"git_commit": "0" * 40, "git_dirty": False, "backend": "cpu", "config": "Release",
                       "compiler": "GNU 13.3.0"},
             "executable": {"path": "/bin/tinyllama_server", "sha256": "e" * 64},
-            "runtime": {"gpu_layers_requested": 0, "ember_env": []}}
+            "runtime": {"gpu_layers_requested": 0, "ember_env": env or [], "ember_settings": settings or {},
+                        "ember_side_files": side_files or {}}}
 
 
 class FakeServer:
@@ -65,7 +66,8 @@ class ProvenanceTests(unittest.TestCase):
 
     def tearDown(self):
         self.tmp.cleanup()
-        # The instruments stay byte for byte what the v0.0.2 manifest and old receipts name.
+        # The instruments are unchanged by the test run: compared with the snapshot taken in setUp. The
+        # v0.0.2 manifest binds only evaluate.py among them (test_frozen_evaluate_matches_v002_manifest).
         self.assertEqual(self.frozen, {f: hashlib.sha256((ROOT / f).read_bytes()).hexdigest() for f in FROZEN})
 
     def args(self, out="out"):
@@ -99,16 +101,18 @@ class ProvenanceTests(unittest.TestCase):
             self.assertEqual(provenance.main(["run", "evaluate", "--"] + self.args("cli")), 3)
         self.assertFalse((self.root / "cli").exists())
 
-    def test_server_restarted_on_other_weights_mid_run_is_changed(self):
+    def test_server_restarted_on_other_weights_mid_run_is_mismatch(self):
+        # Changed mid-run, and the end server serves other weights: the worse status, mismatch, stands.
         server = FakeServer(ember_provenance(self.sha), swap_after_chat=1,
                             swapped=ember_provenance("f" * 64, instance="b" * 32))
         self.assertEqual(self.run_with(server), 2)  # the frozen instrument's own stability check fails too
         record = json.loads((self.root / "out/provenance.json").read_text())
-        self.assertEqual(record["status"], "changed")
+        self.assertEqual(record["status"], "mismatch")
+        self.assertIn("server provenance changed between start and end of the run", record["reasons"])
         self.assertEqual(record["end"]["provenance"]["weights"]["sha256"], "f" * 64)
         report = json.loads((self.root / "out/report.json").read_text())
         self.assertFalse(report["server_and_weights_stable"])
-        self.assertEqual(provenance.verify(self.root / "out")["status"], "changed")
+        self.assertEqual(provenance.verify(self.root / "out")["status"], "mismatch")
 
     def test_restart_on_the_same_weights_is_still_a_change(self):
         server = FakeServer(ember_provenance(self.sha), swap_after_chat=1,
@@ -207,6 +211,117 @@ class ProvenanceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.run_with(server)
         self.assertEqual(server.calls, [])
+
+    # ---- review round (Explore review, 13 Nov 2026) ----
+
+    def test_frozen_evaluate_matches_v002_manifest(self):
+        manifest = json.loads((ROOT / "evaluation_manifest_v002_final.json").read_text())
+        self.assertEqual(manifest["files"]["evaluate.py"], self.frozen["evaluate.py"])
+
+    def test_settings_that_replace_the_model_are_never_verified(self):
+        side = {"sha256": "d" * 64, "bytes": 10}
+        for name in ("EMBER_TEST_SCRIPTED_REPLIES", "EMBER_IR"):
+            with self.subTest(setting=name):
+                prov = ember_provenance(self.sha, env=[name], side_files={name: side})
+                status, reasons = provenance.classify({"provenance": prov}, self.sha)
+                self.assertEqual(status, "unverified")
+                self.assertIn(name, reasons[0])
+                out = "replaced-" + name
+                with self.assertRaises(provenance.ProvenanceRefused):
+                    self.run_with(FakeServer(prov), out=out)
+                self.assertFalse((self.root / out).exists())
+        # A setting that only tunes the computation is recorded, not refused.
+        prov = ember_provenance(self.sha, env=["EMBER_KV"], settings={"EMBER_KV": "q8_0"})
+        self.assertEqual(provenance.classify({"provenance": prov}, self.sha)[0], "verified")
+
+    def test_modified_since_load_and_unknown_schema_are_not_verified(self):
+        modified = ember_provenance(None, status="modified_since_load")
+        status, reasons = provenance.classify({"provenance": modified}, self.sha)
+        self.assertEqual(status, "unverified")
+        self.assertIn("modified_since_load", reasons[0])
+        other = dict(ember_provenance(self.sha), schema="ember.provenance/99")
+        self.assertEqual(provenance.classify({"provenance": other}, self.sha)[0], "unverified")
+        # Modified mid-run: the end /health differs from the start, and the run is changed.
+        server = FakeServer(ember_provenance(self.sha), swap_after_chat=1, swapped=modified)
+        self.assertEqual(self.run_with(server), 2)
+        record = json.loads((self.root / "out/provenance.json").read_text())
+        self.assertEqual(record["status"], "changed")
+        self.assertEqual(provenance.verify(self.root / "out")["status"], "changed")
+
+    def test_unreachable_server_is_refused_cleanly(self):
+        def down(url, payload=None, timeout=45):
+            raise RuntimeError("curl transport failed, code 7")
+        with patch("evaluate.curl_json", side_effect=down), redirect_stderr(io.StringIO()) as err:
+            self.assertEqual(provenance.main(["run", "evaluate", "--"] + self.args()), 3)
+        self.assertIn("no preflight /health", err.getvalue())
+        self.assertFalse((self.root / "out").exists())
+
+    def test_no_end_observation_is_changed(self):
+        server = FakeServer(ember_provenance(self.sha))
+        calls = {"health": 0}
+
+        def flaky(url, payload=None, timeout=45):
+            if url.endswith("/health"):
+                calls["health"] += 1
+                if calls["health"] == 4:  # preflight, instrument start, instrument end, postflight
+                    raise RuntimeError("curl transport failed, code 7")
+            return server(url, payload, timeout)
+        with patch("evaluate.curl_json", side_effect=flaky), redirect_stdout(io.StringIO()):
+            self.assertEqual(provenance.run("evaluate", self.args(), False), 4)
+        record = json.loads((self.root / "out/provenance.json").read_text())
+        self.assertEqual(record["status"], "changed")
+        self.assertIn("end_error", record)
+
+    def _receipt(self, name, server_sha, stable=True):
+        run = self.root / name
+        run.mkdir()
+        meta = {"health": {"model": "m.gguf", "provenance": ember_provenance(server_sha)}, "weights_sha256": self.sha}
+        (run / "report.json").write_bytes(evaluate.canonical({"metadata": meta, "server_and_weights_stable": stable}))
+        return run
+
+    def test_verify_only_ever_downgrades(self):
+        garbage = ('{"schema": "garbled"}', "not json", '{"schema": "tinychat-eval/provenance/1", "start": 5, '
+                   '"status": "verified", "local_weights_sha256": "' + self.sha + '"}')
+        for i, text in enumerate(garbage):
+            with self.subTest(provenance_json=text):
+                mismatch = self._receipt(f"mm{i}", "f" * 64)
+                changed = self._receipt(f"ch{i}", self.sha, stable=False)
+                verified = self._receipt(f"ok{i}", self.sha)
+                for run in (mismatch, changed, verified):
+                    (run / "provenance.json").write_text(text)
+                self.assertEqual(provenance.verify(mismatch)["status"], "mismatch")
+                self.assertEqual(provenance.verify(changed)["status"], "changed")
+                self.assertIn(provenance.verify(verified)["status"], ("unverified", "changed"))
+                with self.assertRaises(ValueError):
+                    provenance.compare(mismatch, verified, allow_unverified=True, allow_engine_change=True)
+        self.assertEqual(provenance.worse("mismatch", "unverified"), "mismatch")
+        self.assertEqual(provenance.worse("changed", "unverified"), "changed")
+        self.assertEqual(provenance.worse("verified", "unverified"), "unverified")
+
+    def test_compare_refuses_engine_differences_unless_allowed(self):
+        self.run_with(FakeServer(ember_provenance(self.sha)), out="a")
+        self.run_with(FakeServer(ember_provenance(self.sha, instance="b" * 32, env=["EMBER_KV"],
+                                                  settings={"EMBER_KV": "q8_0"})), out="b")
+        with self.assertRaises(ValueError) as e:
+            provenance.compare(self.root / "a", self.root / "b")
+        self.assertIn("runtime.ember_settings", str(e.exception))
+        result = provenance.compare(self.root / "a", self.root / "b", allow_engine_change=True)
+        self.assertFalse(result["provenance"]["engine"]["same"])
+        self.assertIn("runtime.ember_env", result["provenance"]["engine"]["differences"])
+        # Same engine, a new process: only the instance id differs, which is not an engine difference.
+        self.run_with(FakeServer(ember_provenance(self.sha, instance="c" * 32)), out="c")
+        self.assertTrue(provenance.compare(self.root / "a", self.root / "c")["provenance"]["engine"]["same"])
+
+    def test_compare_is_evaluate_only_with_a_clear_message(self):
+        self.run_with(FakeServer(ember_provenance(self.sha)), out="a")
+        sweep = self.root / "sweep"
+        sweep.mkdir()
+        meta = {"instrument": "context_sweep", "health": {"provenance": ember_provenance(self.sha)},
+                "weights_sha256": self.sha}
+        (sweep / "report.json").write_bytes(evaluate.canonical({"metadata": meta, "server_and_weights_stable": True}))
+        with self.assertRaises(ValueError) as e:
+            provenance.compare(self.root / "a", sweep)
+        self.assertIn("evaluate.py runs only", str(e.exception))
 
     def test_historical_receipts_verify_read_only(self):
         """Opt-in: TCE_HISTORICAL_RUNS=dir1:dir2 (saved runs); each is classified, none is modified."""
