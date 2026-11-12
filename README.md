@@ -205,7 +205,7 @@ programme put S71's fine-tuning packet and recipe on SmolLM2-135M, an open model
 pretrained on far more text, to ask whether its own base limits relevance. This was
 not run on this repository's suites: it was read on the programme's wide judged
 relevance instrument (532 planned turns, one judge, the same plan for every row;
-higher is better, 0 to 100 points):
+a mean judged score of 0 to 4 per turn times 13, so 0 to 52; higher is better):
 
 | Model | Wide judged relevance (points) |
 |---|---:|
