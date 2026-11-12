@@ -11,3 +11,13 @@ training_lr1e4_v002.json text eol=crlf
 V002_RELEASE.md text eol=crlf
 freeze.py text eol=crlf
 training_data_v002.json text eol=crlf
+# GATE_ACCEPTANCE_V002.json records the manifest's own SHA-256 as a Windows checkout writes it (CRLF), so the
+# manifest checks out with CRLF too; test_acceptance_binding.py verifies the binding.
+evaluation_manifest_v002_final.json text eol=crlf
+# The v0.0.3 manifest (evaluation_manifest_v003.json, made by freeze_v003.py) hashes its files the same way, with
+# CRLF; GATE_ACCEPTANCE_V003.json binds the manifest and the gate in that form.
+provenance.py text eol=crlf
+release_gate_v003.json text eol=crlf
+gate_v003.py text eol=crlf
+freeze_v003.py text eol=crlf
+evaluation_manifest_v003.json text eol=crlf

@@ -1,0 +1,13 @@
+{
+  "version": "v0.0.3",
+  "files": {
+    "evaluate.py": "364ffe891bc5c5d9ab55bd559da9ef212fbce48c8d174ce0705730ac00f78ff5",
+    "integrations.py": "3be763065e28d6ca6459f619d9e65e79979e58fadaeb4ec79cdbb747f0e3f3d7",
+    "provenance.py": "0659bc0a3d157ad7fe83102b7354df0d5db00d4725066056cfa8dfe575032cf0",
+    "suite_release_v002.json": "a28bbe95eabdac4039771135d96ccaffcaf9be94da64eced12916e252732376b",
+    "release_gate_v003.json": "64041cff910d61a32057c500fc0e44a96a5ac2ee79aee80be0c4bbd3965e8156",
+    "gate_v003.py": "5815f166e0411860a06fefca5b6c4905627b0a451cd2acd9d203a5d12963a44f",
+    "freeze_v003.py": "cc68e7b10f2b7f88f0b75172f35bd72ee96c73b31cd32602889e138cf7a5fea6"
+  },
+  "status": "FROZEN_RELEASE_SPECIFICATION"
+}

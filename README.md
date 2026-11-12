@@ -21,6 +21,9 @@ Exact normalized answers are deliberately strict contracts: 'Tuesday or Thursday
 does not pass a Thursday-only question. They measure successful answer-and-format
 contracts, not all possible semantically correct paraphrases. Unknown-information cases
 ask whether a fact was supplied; they do not rely on a judge guessing factual truth.
+Every such case's gold answer is 'no', and no case asks about a fact that was supplied,
+so a model that answers 'No.' to any yes/no question passes them all. Read their passes
+with the replies, not as evidence that the model tracks what it was told.
 
 Coherence, fluency and relevance are separate 0–4 rubric judgments with evidence.
 They are UNJUDGED until the opt-in judge runs. A fluent answer can be irrelevant or
@@ -45,7 +48,38 @@ changed suite, harness, settings, split, repeat count or episode inventory, and 
 operationally incomplete or changing-server runs. Candidate model weights can change.
 Record whether engine, template, tokenizer, precision or hardware also changed before
 attributing a score difference to training. The model filename plus a file hash does
-not prove what bytes the live server loaded; server identity is operator supplied.
+not prove what bytes the live server loaded; `--server-identity` is an operator label.
+
+### Server provenance
+
+An ember server with load-time provenance (ember `docs/USAGE.md`, "Provenance") reports in
+`/health` the SHA-256 of its `.gguf` file as hashed at start, checked against the loader's
+descriptor after the load and, on POSIX, re-checked at every `/health` (`modified_since_load`
+once the mapped file changes); its build and executable SHA-256; its `EMBER_*` settings; and an
+id new to each process. `provenance.py` uses that without changing the frozen instruments
+(their bytes, and so the v0.0.2 manifest's hash of `evaluate.py`, stay as they were):
+
+```powershell
+python provenance.py run evaluate -- --weights MODEL.gguf --server-identity ID --candidate NAME --out runs/NAME
+python provenance.py verify runs/NAME
+python provenance.py compare runs/BEFORE runs/AFTER
+```
+
+`run` (all three instruments) refuses before writing anything when the server is unreachable,
+when its digest differs from the local file's, or when it reports none or runs with
+`EMBER_TEST_SCRIPTED_REPLIES` or `EMBER_IR` (`--allow-unverified` records such a run as
+unverified). It queries `/health` again at the end and writes `runs/NAME/provenance.json`; a
+restart, swap or file modification mid-run is `changed` (or `mismatch` when the new weights
+differ). `verify` reads saved receipts only, and a check can only make a run's status worse:
+receipts from servers without a digest, including every run before 13 November 2026, are
+`unverified`, never `verified`. `compare` works on `evaluate.py` runs only; it refuses
+`mismatch` and `changed` runs, unverified ones unless `--allow-unverified`, and two servers
+whose build, executable or settings differ unless `--allow-engine-change`. A public server
+(`EMBER_PUBLIC=1`) reports no paths, compiler or `EMBER_*` settings: its runs still verify on the
+weights digest, but runtime settings cannot be compared against it (compare says so). The digest is the
+server's own report: it catches the wrong file, a stale server, a mid-run restart and changed
+settings, not a server that misreports, nor a rewrite that keeps a file's size, modification
+time and inode.
 
 The runner is local HTTP only. Client wall time is diagnostic, not a warmed hardware
 speed benchmark. Verify token usage/context capacity before interpreting long-history
@@ -114,27 +148,102 @@ or repair an incoherent model merely by being attached. The instrument exists
 frozen before any candidate is read. It is a diagnostic, not a release gate, and
 training for it waits until short conversation is reliable.
 `python rag_eval.py retrieval` reports retrieval recall without a server.
+In the raw condition the device is fictional, so 'unknown' is the correct reply to every
+question, yet the summary files a raw 'unknown' to an answerable question under
+`false_refusal`: read raw `false_refusal` as correct abstention, not as an error.
 
 ## First baseline and review (3 November 2026)
 
 The preserved S-full SFT1500 CPU server completed 26 development episodes,
-with all 13 complete-conversation repeat pairs identical. None of the 22 strict
-answer/format checks passed. That is not zero recall: Nora and blue survived
+with all 13 complete-conversation repeat pairs identical. None of the 11 scored
+cases passed its strict answer/format check. The summary's 22 checks count each
+case's two identical greedy repeats, which are not independent evidence, so the
+unit is 11 cases. That is not zero recall: Nora and blue survived
 in replies that violated the requested answer format; delayed Basil became Ted.
 Keep the raw replies when interpreting these scores. Four separately recorded
 Gemini pilot judgments suggest sentence fluency can coexist with poor relevance;
 these selected cases are not an overall ability estimate. Holdout remains unused.
 
+That paragraph describes the S-full pilot, not later models. From 3 to 11 November
+2026, 71 screening models trained in the parent workspace were read on
+`suite_release_v002.json`'s dev split with this harness, decoding, two repeats and
+generated history; every run completed, with identical repeats. The most any passes
+is 4 of 11 scored cases (five models, among them S69 and S70: `name_now`,
+`meeting_corrected`, `colour_corrected`, `format_only`); the latest, S71s2 on 11 November,
+passes 3 of 11. Delayed recall passed strictly only for three early screens
+(S12, S24 and S26: `pet_delayed`, "Basil"), and no model read after S26 on 5 November
+passes a delayed-recall, basic Q&A or missing-information case. These are development reads of screening models,
+not release candidates, and the holdout has still never been run. Their receipts
+are local to that workspace.
+
+**What a strict miss means.** These checks pass only an exact, bare answer: the
+right fact inside a longer sentence, with extra words, or with a hedge fails, and so
+does a reply that is right in content but wrong in form. A strict score is therefore
+a floor on content, not a measure of it, and a low one does not say whether the model
+lacked the fact or only failed the format. The judged and rule-scored reads of the
+same models moved much further than the strict checks: on the parent programme's
+13-turn judged relevance read, S-full SFT1500 scored 19 of 52 and S71 36; on its
+told-recall rule, 7 of 108 and 62. Those are different instruments with their own
+protocols, recorded in paperkiln's `docs/CAPABILITY.md`; they are not comparable
+with this suite's counts. Two limits of this suite also bear on any reading: the
+three "Have I told you…?" cases all have gold "no", so a model that always answers
+"No." passes them; and repeats are greedy and identical, so two repeats are one
+observation, not two.
+
+**How little these models were trained.** The models are small (72,761,088
+parameters) and saw little data for their size. S-full's base saw 163.84M positions,
+about 2.3 tokens per parameter; base A, under every model from 9 November, saw
+983.04M, about 13.5. That is near the order of a compute-optimal budget (roughly 20
+tokens per parameter) but far below current small open models: SmolLM2-135M was
+trained on about 2 trillion tokens, roughly 15,000 per parameter. Low strict scores
+should be read in that light. The next base (base 2, 18 × 512, in training from
+13 November 2026) is registered at 250,000 steps of 16,384 positions, about 59
+tokens per parameter; nothing is claimed for it until it is evaluated.
+
+**An open small model on the same fine-tuning (A29, 11 November 2026).** The parent
+programme put S71's fine-tuning packet and recipe on SmolLM2-135M, an open model
+pretrained on far more text, to ask whether its own base limits relevance. This was
+not run on this repository's suites: it was read on the programme's wide judged
+relevance instrument (532 planned turns, one judge, the same plan for every row;
+a mean judged score of 0 to 4 per turn times 13, so 0 to 52; higher is better):
+
+| Model | Wide judged relevance (points) |
+|---|---:|
+| S70, base A | 30.6 |
+| S71, base A (the programme's best model of its own) | 31.7 |
+| SmolLM2-135M-Instruct as released | 24.5 |
+| SmolLM2-360M-Instruct as released | 28.3 |
+| S71's packet on SmolLM2-135M, seed 1 | 37.0 (+5.3 over S71, 95% +3.2 to +7.4) |
+| the same, seed 2 | 36.4 (+4.7, 95% +2.6 to +6.9) |
+
+The open-base arm read higher at both seeds (verdict `base_up`). It changed the base,
+size (135M against 73M parameters), tokeniser, architecture, pretraining, the authors'
+instruction tuning, trainer and engine together, so it shows that the package helps,
+not which ingredient does. Its replies were generated by `transformers` in bf16 on a
+GPU, ours by ember on the CPU; the reply cap counts each model's own tokens, and
+SmolLM2's larger vocabulary fits more text into the cap; the two released models hit
+the cap on most turns, so their reads carry truncation. The programme does not adopt
+an open base as its model (the owner's ruling, 11 November 2026); A29 is a diagnostic,
+and it is why base 2 exists. Record: the parent workspace's `PROTOCOL.md` section 45;
+summary in paperkiln's `docs/CAPABILITY.md`.
+
 Original local receipts: runs/sfull-baseline-20261103/. Langfuse contains the
 original baseline and a separately named judged experiment. Review found malformed
 HTTP-200 response shapes could abort the original runner before recording an
-episode. The repaired runner preserves malformed raw responses and final-health
-failures in its report; six offline tests pass. A fresh baseline under the repaired
+episode. The repaired runner preserves malformed JSON response shapes and final-health
+failures in its report; six offline tests pass. An HTTP-200 body that is not JSON is
+still recorded only as a JSONDecodeError operational error, without its bytes. A fresh baseline under the repaired
 harness lives in runs/sfull-baseline-fixed-20261103/. Original receipts and judge
 ratings retain their original hashes and are not relabelled as repaired-run data.
 
 Runs are ignored local artifacts, not committed training material. Repository: https://github.com/JohnnyTeutonic/tinychat-eval.
-No licence has been selected yet.
+
+## Licence
+
+MIT; see [LICENSE](LICENSE). The licence covers the code and the data files alike.
+One request that is not a licence term: please do not train models on the suites, the
+manual, the context-sweep probes or recorded evaluation conversations. Training on
+them makes these instruments useless for the models trained on them.
 
 ## v0.0.2 preparation
 
@@ -145,4 +254,33 @@ the new instrument and proposal; validate with `python freeze.py --check
 evaluation_manifest_v002_final.json`. The original pilot suite/results stay unchanged.
 New reference-based semantic ratings and per-turn ratings are optional separate
 diagnostics; no new cloud judging or training was launched during preparation.
-Release specification acceptance and admission prerequisites are still required.
+[GATE_ACCEPTANCE_V002.json](GATE_ACCEPTANCE_V002.json) accepts the unchanged draft
+criteria, recorded on 3 November 2026 before any candidate output was read. Its
+judgment gates stay blocked until the calibration requirement is met; the four blind
+human ratings in `calibration/` are final-reply ratings, while the gate rates every
+turn of its five cases, and no agreement criterion has been fixed. As of 13 November
+2026 no evaluation of a v0.0.2 training candidate against these gates is recorded.
+Admission prerequisites remain.
+
+## v0.0.3 release specification
+
+[release_gate_v003.json](release_gate_v003.json) is the release specification for
+candidates evaluated from 13 November 2026, fixed before any v0.0.3 candidate was
+evaluated and before any holdout run ([GATE_ACCEPTANCE_V003.json](GATE_ACCEPTANCE_V003.json)).
+It keeps v0.0.2's thresholds, suite and harness, and v0.0.2's files stay unchanged. It differs in
+three ways:
+
+- Every run the verdict reads, candidate and baseline alike, must be `verified` by
+  `provenance.py`. Receipts from servers without a load-time digest, including the
+  S-full baseline, are not, so a baseline is rerun on a provenance-reporting server.
+- Judge ratings are diagnostic: reported, never pass or fail (Jonathan, 13 November 2026).
+- Each threshold says what it is a fraction of: `dev_exact_min` is taken over the scored
+  development cases (11 of 13), the family and holdout criteria over their scored cases,
+  and a case passes when every repeat passes. Claude Opus 5.5 chose this on 13 November
+  2026, because unscored cases cannot pass; Jonathan may override it in a later version.
+
+It states the missing-information limit above; a suite version with matched 'yes' cases
+is proposed there and not built. Evaluate a candidate offline with
+`python gate_v003.py --candidate-dev runs/C --baseline-dev runs/B --candidate-holdout runs/CH
+--baseline-holdout runs/BH --export-parity passed` (exit 0 pass, 1 fail, 2 incomplete), and
+check the binding with `python freeze_v003.py --check evaluation_manifest_v003.json`.

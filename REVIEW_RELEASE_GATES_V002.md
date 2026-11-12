@@ -107,3 +107,24 @@ This uses the existing diagnostic and needs no new gate.
   right.
 - **The selection and stopping rules look good as written:** development-only selection, the lower-learning-rate
   tie-break, one holdout run for the selected candidate and the preserved baseline, and no automatic extra candidates.
+
+## Note, 13 November 2026: point 5's rule misclassifies the baseline
+
+Claude Opus 5.5, 13 November 2026, in the engineering audit Jonathan requested (item B4). The review above is left
+as written. Point 5 proposed reading every fail-to-pass flip by the baseline's `answer_mentioned`: mentioned means a
+format gain, not mentioned means a content gain. On the preserved S-full baseline
+(`runs/v002-baseline-generated-20261103/`, generated history) that rule misclassifies in both directions:
+
+- **`unknown_name`.** The baseline replied "I have not told you.", which has the right content but not the word
+  "no", so `answer_mentioned` is False. A flip to "No." would be called a content gain, although the baseline
+  already had the content and the gain is format only. `unknown_pet`'s baseline ("I have a cat, but I like cats.")
+  is a genuine content failure, so the rule happens to be right there.
+- **`name_now`.** The baseline replied "My name is Nora.", so `answer_mentioned` is True. A flip to "Nora" would be
+  called a format gain, although the baseline gave the user's name as the assistant's own. Jonathan's blind rating
+  of that reply is relevance 0 (`calibration/human_final_reply_ratings_v002_sfull.json`), so the gain includes
+  content.
+- **The negation flag** fires on the correct answer "No.", and misses "doesn't", "haven't", "can't", "wasn't" and
+  curly apostrophes, so it cannot mark a contradiction reliably either.
+
+Read each flip from the transcripts, with the lexical flag as a pointer only, as `V002_RELEASE.md` already requires
+for role reversal, negation and paraphrase. The v0.0.3 specification (`release_gate_v003.json`) says the same.
