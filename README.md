@@ -48,7 +48,36 @@ changed suite, harness, settings, split, repeat count or episode inventory, and 
 operationally incomplete or changing-server runs. Candidate model weights can change.
 Record whether engine, template, tokenizer, precision or hardware also changed before
 attributing a score difference to training. The model filename plus a file hash does
-not prove what bytes the live server loaded; server identity is operator supplied.
+not prove what bytes the live server loaded; `--server-identity` is an operator label.
+
+### Server provenance
+
+An ember server with load-time provenance (ember `docs/USAGE.md`, "Provenance") reports in
+`/health` the SHA-256 of its `.gguf` file as hashed at start, checked against the loader's
+descriptor after the load and, on POSIX, re-checked at every `/health` (`modified_since_load`
+once the mapped file changes); its build and executable SHA-256; its `EMBER_*` settings; and an
+id new to each process. `provenance.py` uses that without changing the frozen instruments
+(their bytes, and so the v0.0.2 manifest's hash of `evaluate.py`, stay as they were):
+
+```powershell
+python provenance.py run evaluate -- --weights MODEL.gguf --server-identity ID --candidate NAME --out runs/NAME
+python provenance.py verify runs/NAME
+python provenance.py compare runs/BEFORE runs/AFTER
+```
+
+`run` (all three instruments) refuses before writing anything when the server is unreachable,
+when its digest differs from the local file's, or when it reports none or runs with
+`EMBER_TEST_SCRIPTED_REPLIES` or `EMBER_IR` (`--allow-unverified` records such a run as
+unverified). It queries `/health` again at the end and writes `runs/NAME/provenance.json`; a
+restart, swap or file modification mid-run is `changed` (or `mismatch` when the new weights
+differ). `verify` reads saved receipts only, and a check can only make a run's status worse:
+receipts from servers without a digest, including every run before 13 November 2026, are
+`unverified`, never `verified`. `compare` works on `evaluate.py` runs only; it refuses
+`mismatch` and `changed` runs, unverified ones unless `--allow-unverified`, and two servers
+whose build, executable or settings differ unless `--allow-engine-change`. The digest is the
+server's own report: it catches the wrong file, a stale server, a mid-run restart and changed
+settings, not a server that misreports, nor a rewrite that keeps a file's size, modification
+time and inode.
 
 The runner is local HTTP only. Client wall time is diagnostic, not a warmed hardware
 speed benchmark. Verify token usage/context capacity before interpreting long-history
