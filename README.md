@@ -284,3 +284,8 @@ is proposed there and not built. Evaluate a candidate offline with
 `python gate_v003.py --candidate-dev runs/C --baseline-dev runs/B --candidate-holdout runs/CH
 --baseline-holdout runs/BH --export-parity passed` (exit 0 pass, 1 fail, 2 incomplete), and
 check the binding with `python freeze_v003.py --check evaluation_manifest_v003.json`.
+
+The v0.0.3 matched baseline is `runs/sfull-v003-baseline-20261113/`, committed as an exception
+to ignored runs: S-full SFT1500 (weights `b84aa1c4…`) served by ember `3b2270d` on the CPU,
+release suite, development split, two repeats, generated history; `provenance.py verify` gives
+`verified`. Its 26 episodes repeat the 3 November receipts reply for reply; 0 of 11 scored cases pass.
