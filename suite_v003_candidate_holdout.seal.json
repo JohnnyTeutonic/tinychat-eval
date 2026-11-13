@@ -1,0 +1,15 @@
+{
+  "version": "candidate-0.0.3-holdout",
+  "status": "CANDIDATE, SEALED, never run: not frozen, not accepted, read by no gate",
+  "sealed_by": "Claude Opus 5.5, 13 Nov 2026",
+  "sha256": "952c16f27faf3762a417e9c260d6394c18daeb0f5f65399f07681fc08c246084",
+  "bytes": 7848,
+  "location": "outside this repository: C:/ml_artifacts/tinychat_eval_sealed/suite_v003_candidate_holdout.json on Jonathan's laptop (WSL /mnt/c/ml_artifacts/...); it has no other copy yet",
+  "cases": 24,
+  "families": {"basic_qa": 4, "immediate_recall": 4, "delayed_recall": 4, "correction": 4, "told_or_not": 4, "instruction": 4},
+  "twin_pairs": 2,
+  "seen_by": "its author only, while writing it; no model output on it exists",
+  "practice": "The v0.0.2 holdout is public (operator separation only). This one keeps only its hash in the repository, so a reader of the repository, or a training-data generator that reads it, cannot see the cases. It is not encrypted; whoever holds the file can read it.",
+  "verify": "TCE_SEALED_HOLDOUT=/path/to/suite_v003_candidate_holdout.json python -m unittest test_suite_v003_candidate (checks the hash and validates the cases without printing them)",
+  "overlap_audit": "suite_v003_candidate_audit.json: no exact message and no shared 8-word span with suite.json, suite_release_v002.json, the candidate dev and cue suites, the context-sweep probes and filler, or manual_v001.json; no shared 8-word span with the cue-selective engine's 20,000-triplet training sample; no name from the engine's name banks"
+}

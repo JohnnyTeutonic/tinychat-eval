@@ -1,0 +1,48 @@
+{
+  "version": "candidate-0.0.3-cue",
+  "status": "CANDIDATE diagnostic for Jonathan's approval (13 Nov 2026): never a release criterion; not frozen; no model has been evaluated on it",
+  "training_use": "forbidden",
+  "author": "Claude Opus 5.5, 13 Nov 2026. Hand-written, out-of-engine triplets after the design of the lane's scenario engine 2.1 (AI_ML/chat_screens_claude/cue_selective/engine_v21/README.md): A, a decisive twin B whose gold differs, and a nuisance twin N whose gold is A's. No engine code or output is copied; no engine seed stream is used.",
+  "scoring": "score_v003.py: per triplet, whether A, B and N are each content-correct and strict-correct; diagnostic only",
+  "cases": [
+    {"id": "cue_tins_A", "family": "cue_sensitivity", "split": "dev", "diagnostic": true, "cue": {"triplet": "tins", "role": "A"},
+     "users": ["The red tin holds buttons and the yellow tin holds stamps.", "What does the yellow tin hold? Reply with just one word."],
+     "check": {"kind": "exact", "answers": ["stamps"], "content": {"require_any": ["stamps"], "forbid": ["buttons", "seeds", "ribbons"]}}},
+    {"id": "cue_tins_B", "family": "cue_sensitivity", "split": "dev", "diagnostic": true, "cue": {"triplet": "tins", "role": "B", "edit": "decisive: the asked tin's contents"},
+     "users": ["The red tin holds buttons and the yellow tin holds seeds.", "What does the yellow tin hold? Reply with just one word."],
+     "check": {"kind": "exact", "answers": ["seeds"], "content": {"require_any": ["seeds"], "forbid": ["buttons", "stamps"]}}},
+    {"id": "cue_tins_N", "family": "cue_sensitivity", "split": "dev", "diagnostic": true, "cue": {"triplet": "tins", "role": "N", "edit": "nuisance: the other tin's contents"},
+     "users": ["The red tin holds ribbons and the yellow tin holds stamps.", "What does the yellow tin hold? Reply with just one word."],
+     "check": {"kind": "exact", "answers": ["stamps"], "content": {"require_any": ["stamps"], "forbid": ["buttons", "seeds", "ribbons"]}}},
+
+    {"id": "cue_shops_A", "family": "cue_sensitivity", "split": "dev", "diagnostic": true, "cue": {"triplet": "shops", "role": "A"},
+     "users": ["The bakery opens at six and the chemist opens at nine.", "When does the chemist open? Reply with just the time."],
+     "check": {"kind": "exact", "answers": ["nine", "9", "at nine", "at 9"], "content": {"require_any": ["nine", "9"], "forbid": ["six", "6", "ten", "10", "five", "5"]}}},
+    {"id": "cue_shops_B", "family": "cue_sensitivity", "split": "dev", "diagnostic": true, "cue": {"triplet": "shops", "role": "B", "edit": "decisive: the asked shop's time"},
+     "users": ["The bakery opens at six and the chemist opens at ten.", "When does the chemist open? Reply with just the time."],
+     "check": {"kind": "exact", "answers": ["ten", "10", "at ten", "at 10"], "content": {"require_any": ["ten", "10"], "forbid": ["six", "6", "nine", "9"]}}},
+    {"id": "cue_shops_N", "family": "cue_sensitivity", "split": "dev", "diagnostic": true, "cue": {"triplet": "shops", "role": "N", "edit": "nuisance: the other shop's time"},
+     "users": ["The bakery opens at five and the chemist opens at nine.", "When does the chemist open? Reply with just the time."],
+     "check": {"kind": "exact", "answers": ["nine", "9", "at nine", "at 9"], "content": {"require_any": ["nine", "9"], "forbid": ["six", "6", "ten", "10", "five", "5"]}}},
+
+    {"id": "cue_kites_A", "family": "cue_sensitivity", "split": "dev", "diagnostic": true, "cue": {"triplet": "kites", "role": "A"},
+     "users": ["Kerensa's kite is orange and Jago's kite is grey.", "What colour is Jago's kite? Reply with just the colour."],
+     "check": {"kind": "exact", "answers": ["grey", "gray"], "content": {"require_any": ["grey", "gray"], "forbid": ["orange", "purple"]}}},
+    {"id": "cue_kites_B", "family": "cue_sensitivity", "split": "dev", "diagnostic": true, "cue": {"triplet": "kites", "role": "B", "edit": "decisive: the question asks about the other person"},
+     "users": ["Kerensa's kite is orange and Jago's kite is grey.", "What colour is Kerensa's kite? Reply with just the colour."],
+     "check": {"kind": "exact", "answers": ["orange"], "content": {"require_any": ["orange"], "forbid": ["grey", "gray", "purple"]}}},
+    {"id": "cue_kites_N", "family": "cue_sensitivity", "split": "dev", "diagnostic": true, "cue": {"triplet": "kites", "role": "N", "edit": "nuisance: the other person's colour"},
+     "users": ["Kerensa's kite is purple and Jago's kite is grey.", "What colour is Jago's kite? Reply with just the colour."],
+     "check": {"kind": "exact", "answers": ["grey", "gray"], "content": {"require_any": ["grey", "gray"], "forbid": ["orange", "purple"]}}},
+
+    {"id": "cue_blanket_A", "family": "cue_sensitivity", "split": "dev", "diagnostic": true, "cue": {"triplet": "blanket", "role": "A"},
+     "users": ["The spare blanket is in the hall cupboard and the torch is in the shed.", "Where is the spare blanket? Reply with just the place."],
+     "check": {"kind": "exact", "answers": ["hall cupboard", "the hall cupboard", "in the hall cupboard"], "content": {"require_any": ["hall cupboard"], "forbid": ["shed", "loft", "garage"]}}},
+    {"id": "cue_blanket_B", "family": "cue_sensitivity", "split": "dev", "diagnostic": true, "cue": {"triplet": "blanket", "role": "B", "edit": "decisive: the asked object's place"},
+     "users": ["The spare blanket is in the loft and the torch is in the shed.", "Where is the spare blanket? Reply with just the place."],
+     "check": {"kind": "exact", "answers": ["loft", "the loft", "in the loft"], "content": {"require_any": ["loft"], "forbid": ["shed", "hall cupboard"]}}},
+    {"id": "cue_blanket_N", "family": "cue_sensitivity", "split": "dev", "diagnostic": true, "cue": {"triplet": "blanket", "role": "N", "edit": "nuisance: the other object's place"},
+     "users": ["The spare blanket is in the hall cupboard and the torch is in the garage.", "Where is the spare blanket? Reply with just the place."],
+     "check": {"kind": "exact", "answers": ["hall cupboard", "the hall cupboard", "in the hall cupboard"], "content": {"require_any": ["hall cupboard"], "forbid": ["shed", "loft", "garage"]}}}
+  ]
+}

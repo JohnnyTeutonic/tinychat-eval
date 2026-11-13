@@ -1,0 +1,60 @@
+{
+  "producer": "Claude Opus 5.5, 13 Nov 2026",
+  "ngram": 8,
+  "holdout_sha256": "952c16f27faf3762a417e9c260d6394c18daeb0f5f65399f07681fc08c246084",
+  "holdout_vs_other_texts": {
+    "suite.json": {
+      "exact_messages": 0,
+      "shared_8grams": 0
+    },
+    "suite_release_v002.json": {
+      "exact_messages": 0,
+      "shared_8grams": 0
+    },
+    "candidate dev": {
+      "exact_messages": 0,
+      "shared_8grams": 0
+    },
+    "candidate cue": {
+      "exact_messages": 0,
+      "shared_8grams": 0
+    },
+    "context_sweep probes and filler": {
+      "exact_messages": 0,
+      "shared_8grams": 0
+    },
+    "manual_v001.json": {
+      "exact_messages": 0,
+      "shared_8grams": 0
+    }
+  },
+  "engine_sample": {
+    "path": "/home/jonat/cue_engine_v21/sample/train_20k.jsonl",
+    "sha256": "8bd8085852de34f23b725445c7e6dcfe50a4c19bb4d31d62eb9ad93b2d479c90",
+    "documents_scanned": 120000,
+    "shared_8grams": {
+      "dev (new cases)": 0,
+      "cue": 0,
+      "holdout": 0
+    },
+    "shared_examples_non_holdout": {
+      "dev (new cases)": [],
+      "cue": []
+    }
+  },
+  "names_vs_engine_banks": {
+    "dev (new cases)": {
+      "capitalised": 11,
+      "in_engine_name_banks": []
+    },
+    "cue": {
+      "capitalised": 3,
+      "in_engine_name_banks": []
+    },
+    "holdout": {
+      "capitalised": 10,
+      "in_engine_name_banks": 0
+    }
+  },
+  "names_vs_engine_banks_note": "holdout names are counted, not listed"
+}

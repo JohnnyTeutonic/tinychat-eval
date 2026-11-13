@@ -284,3 +284,84 @@ is proposed there and not built. Evaluate a candidate offline with
 `python gate_v003.py --candidate-dev runs/C --baseline-dev runs/B --candidate-holdout runs/CH
 --baseline-holdout runs/BH --export-parity passed` (exit 0 pass, 1 fail, 2 incomplete), and
 check the binding with `python freeze_v003.py --check evaluation_manifest_v003.json`.
+
+## Candidate suite v0.0.3: what changes and why (CANDIDATE, for Jonathan's approval)
+
+Proposed by Claude Opus 5.5 on 13 November 2026, at Jonathan's request ("we do need to
+improve tinychat-eval"). Nothing here is frozen or accepted. No gate reads it, and no
+model has been evaluated on it. The v0.0.2 and v0.0.3 files, suites, gold and receipts
+are unchanged. The v0.0.3 gate keeps reading `suite_release_v002.json`.
+
+**Gate version.** Adopting this suite would need its own v0.0.4 release specification,
+manifest and acceptance record, fixed before any candidate is evaluated on it. A v0.0.3
+verdict and a verdict under this suite are not comparable.
+
+**What changes**
+
+- **Twin cases replace the one-sided "Have I told you…?" cases (B1).** The family
+  `told_or_not` has four matched pairs. In each pair the told twin gives the fact and the
+  untold twin does not, they ask the same final question, and the two differ in exactly
+  one user message. The told twin's gold is `yes` and the untold twin's is `no`. Two
+  pairs ask at once and two after filler turns. A constant answer is right on exactly
+  half the family. The two v0.0.2 cases are the untold halves of two of the pairs.
+- **More cases per family: six scored development cases where v0.0.2 had one or two.**
+  `told_or_not` has eight (four pairs).
+  - Why six: models trained on the same recipe with different seeds differ by one to
+    two of the 11 v0.0.2 cases (S67 3 against S67s2 1; S71 1 against S71s2 3; S72 2
+    against S72s2 3), and single cases flip between seeds.
+  - With two cases a family moves in 50-point steps, so one seed flip decides it. With
+    six it moves in 17-point steps.
+  - More would cost run time, below.
+- **A cue-sensitivity diagnostic** (`suite_v003_candidate_cue.json`), never a release
+  criterion. It has four hand-written triplets:
+  - a base conversation A;
+  - a decisive twin B whose edit changes the gold reply;
+  - a nuisance twin N whose edit leaves it unchanged.
+
+  A triplet is selective when A, B and N are all answered correctly. The design follows
+  the lane's scenario engine 2.1, but nothing is copied from it: no code, output or seed
+  stream. The triplets share no 8-word span with that engine's 20,000-triplet training
+  sample, and no name with its name banks (`suite_v003_candidate_audit.json`). This makes
+  them the out-of-engine check the cue-selective plan asks for.
+- **Strict and content-correct are reported separately** (`score_v003.py`, offline, on
+  the saved report of the unchanged `evaluate.py`).
+  - **Strict** is `evaluate.py`'s exact contract.
+  - **Content** is a small per-case rule: a required phrase; forbidden phrases, which
+    are excused after "not" or "no longer"; and, for yes/no cases, the polarity.
+  - Forbidden phrases include each case's stale value, contradictory alternatives and
+    role reversals such as "My name is Nora."
+  - The unit is the distinct case: a case passes only if every repeat passes. Families,
+    twin pairs and triplets are reported as "k of n".
+  - The rules are lexical, so transcripts stay the arbiter of meaning. A rule cannot
+    tell "I like the colour blue" from an answer about the bicycle.
+- **The split is rebuilt, and the holdout is sealed.**
+  - Development: 40 cases. These are the 13 v0.0.2 development cases, with their wording
+    and strict gold unchanged and a content rule added, plus 27 new ones.
+  - The public v0.0.2 holdout is left out, so the v0.0.3 gate's holdout stays unread.
+  - Holdout: 24 new cases, four per scored family and two twin pairs. Only its SHA-256
+    and its counts are in the repository (`suite_v003_candidate_holdout.seal.json`).
+  - The content is outside the repository: `C:/ml_artifacts/tinychat_eval_sealed/`.
+    It is not encrypted, and it has no second copy yet.
+  - It shares no message and no 8-word span with any suite or instrument text here, or
+    with the engine sample.
+
+**Cases.** Development: `basic_qa` 6, `immediate_recall` 6, `delayed_recall` 6,
+`correction` 6, `told_or_not` 8, `instruction` 6, and `open_conversation` 2 (unscored).
+Holdout: four in each of the six scored families. Cue diagnostic: 12 cases (four triplets).
+
+**Run time.** Counting one request per user turn:
+- v0.0.2 development is 29 requests a repeat, 58 at the usual two repeats.
+- The candidate development set is 90 requests a repeat: about 1.5 times today's cost at
+  one repeat, three times at two.
+- The cue diagnostic adds 24, and the holdout is 54 a repeat.
+
+Repeats have been identical in all 71 recorded runs, so the proposal is one repeat for
+development screening and two at release.
+
+**Use**
+
+```powershell
+python evaluate.py run --suite suite_v003_candidate_dev.json --repeats 1 --weights MODEL.gguf --server-identity ID --candidate NAME --out runs/NAME-v003c
+python score_v003.py runs/NAME-v003c/report.json --suite suite_v003_candidate_dev.json
+python score_v003.py --validate suite_v003_candidate_dev.json suite_v003_candidate_cue.json
+```
